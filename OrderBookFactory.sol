@@ -18,7 +18,7 @@ contract OrderBookFactory {
 	function placeOrder (uint orderId, address baseToken, address quoteToken, OrderBook.Side side, uint baseQuantity, uint quoteQuantity) public payable {
 		(bool success, bytes memory data) = address(orderbooks[keccak256(abi.encodePacked(baseToken, quoteToken))]).call{
 		    value: msg.value
-		}(abi.encodeWithSignature("placeOrder(uint,address,uint256,uint256,uint256)", ++orderCounter, msg.sender, side, baseQuantity, quoteQuantity));
+		}(abi.encodeWithSignature("placeOrder(uint256,address,uint256,uint256,uint256)", ++orderCounter, msg.sender, side, baseQuantity, quoteQuantity));
 		require(success);
 		emit OrderPlaced(orderId, msg.sender, baseToken, quoteToken, side, baseQuantity, quoteQuantity);
 	}
