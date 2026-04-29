@@ -5,86 +5,93 @@ import "../libraries/SafeERC20.sol";
 using SafeERC20 for IERC20;
 
 contract OrderBook {
+	address public BASE_TOKEN;
+	address public QUOTE_TOKEN;
+	address public ORDERBOOK_ROUTER;
+
+	constructor(address _baseToken, address _quoteToken, address _router) {
+		BASE_TOKEN = _baseToken;
+		QUOTE_TOKEN = _quoteToken;
+		ORDERBOOK_ROUTER = _router;
+	}
+
         enum Side { BUY, SELL }
         struct Order {
 		address user;
                 uint baseQuantity;
                 uint quoteQuantity;
-                address baseToken;
-                address quoteToken;
                 Side side;
         }
         mapping(uint => Order) public orders;
         uint public orderCounter = 0; 
 
-	event OrderPlaced(uint orderId, address indexed user, address indexed baseToken, address indexed quoteToken, Side side, uint baseQuantity, uint quoteQuantity);
-	event OrderCanceled(uint indexed orderId);
-	event OrderFill(uint indexed orderId, uint baseQuantity);
-
-	function placeOrder (address baseToken, address quoteToken, Side side, uint baseQuantity, uint quoteQuantity) public payable {
+	function placeOrder (Side side, uint baseQuantity, uint quoteQuantity) internal payable {
+		require(msg.sender == ORDERBOOK_ROUTER, "only router can send orders");
 		require(baseQuantity > 0 && quoteQuantity > 0, "zero quantity orders not permitted");
 		if (side == Side.SELL) {
 			if (msg.value > 0) {
-				require(baseToken == address(0), "base token should be 0x0 when selling ETH");
+				require(BASE_TOKEN == address(0), "base token should be 0x0 when selling ETH");
 				require(baseQuantity == msg.value, "mismatch between provided baseQuantity and amount of ETH sent");
 			}
 			else {
-				uint beforeBalance = IERC20(baseToken).balanceOf(address(this));
-				IERC20(baseToken).safeTransferFrom(msg.sender, address(this), baseQuantity);
-				uint afterBalance = IERC20(baseToken).balanceOf(address(this));
+				uint beforeBalance = IERC20(BASE_TOKEN).balanceOf(address(this));
+				IERC20(BASE_TOKEN).safeTransferFrom(msg.sender, address(this), baseQuantity);
+				uint afterBalance = IERC20(BASE_TOKEN).balanceOf(address(this));
 				require(afterBalance - beforeBalance == baseQuantity, "token error: tokens that charge transfer fees are not permitted");
 			}
 		}
 		else if (side == Side.BUY) {
 			if (msg.value > 0) {
-				require(quoteToken == address(0), "quote token should be 0x0 when buying with ETH");
+				require(QUOTE_TOKEN == address(0), "quote token should be 0x0 when buying with ETH");
 				require(quoteQuantity == msg.value, "mismatch between provided quoteQuantity and amount of ETH sent");
 			}
 			else {
-				uint beforeBalance = IERC20(quoteToken).balanceOf(address(this));
-				IERC20(quoteToken).safeTransferFrom(msg.sender, address(this), quoteQuantity);
-				uint afterBalance = IERC20(quoteToken).balanceOf(address(this));
+				uint beforeBalance = IERC20(QUOTE_TOKEN).balanceOf(address(this));
+				IERC20(QUOTE_TOKEN).safeTransferFrom(msg.sender, address(this), quoteQuantity);
+				uint afterBalance = IERC20(QUOTE_TOKEN).balanceOf(address(this));
 				require(afterBalance - beforeBalance == quoteQuantity, "token error: tokens that charge transfer fees are not permitted");
 			}
 		}
                 uint orderId = ++orderCounter;
-                orders[orderId] = Order(msg.sender, baseQuantity, quoteQuantity, baseToken, quoteToken, side);
-		emit OrderPlaced(orderId, msg.sender, baseToken, quoteToken, side, baseQuantity, quoteQuantity);
+                orders[orderId] = Order(msg.sender, baseQuantity, quoteQuantity, BASE_TOKEN, QUOTE_TOKEN, side);
+		emit OrderPlaced(orderId, msg.sender, BASE_TOKEN, QUOTE_TOKEN, side, baseQuantity, quoteQuantity);
         }
 
-	function cancelOrder (uint orderId) public {
+	function cancelOrder (uint orderId) internal {
+		require(msg.sender == ORDERBOOK_ROUTER, "only router can send orders");
 		Order memory order = orders[orderId];
 		require(msg.sender == order.user, "users can only cancel their own order");
                 delete orders[orderId];
 		if (order.side == Side.SELL) {
-			if (order.baseToken == address(0)) {
+			if (BASE_TOKEN == address(0)) {
 				payable(order.user).transfer(order.baseQuantity);
 			} 
 			else {
-				IERC20(order.baseToken).safeTransfer(msg.sender, order.baseQuantity);
+				IERC20(BASE_TOKEN).safeTransfer(msg.sender, order.baseQuantity);
 			}
 		}
 		else if (order.side == Side.BUY) {
-			if (order.quoteToken == address(0)) {
+			if (QUOTE_TOKEN == address(0)) {
 				payable(order.user).transfer(order.quoteQuantity);
 			} 
 			else {
-				IERC20(order.quoteToken).safeTransfer(msg.sender, order.quoteQuantity);
+				IERC20(QUOTE_TOKEN).safeTransfer(msg.sender, order.quoteQuantity);
 			}
 		}
 		emit OrderCanceled(orderId);
         }
 	
-	function fillOrder (uint orderId, uint baseQuantity) public payable {
+	function fillOrder (uint orderId, uint baseQuantity) internal payable {
+		require(msg.sender == ORDERBOOK_ROUTER, "only router can send orders");
                 Order memory order = orders[orderId];
 		uint quoteQuantity = baseQuantity * order.quoteQuantity / order.baseQuantity;
 		if (msg.value > 0) {
 			if (order.side == Side.SELL) {
-				require(order.quoteToken == address(0), "quote token should be 0x0");
+				require(QUOTE_TOKEN == address(0), "quote token should be 0x0");
 				require(quoteQuantity == msg.value, "mismatch between quoteQuantity and amount of ETH sent");
 			}
 			else if (order.side == Side.BUY) {
-				require(order.baseToken == address(0), "base token should be 0x0");
+				require(BASE_TOKEN == address(0), "base token should be 0x0");
 				require(baseQuantity == msg.value, "mismatch between provided baseQuantity and amount of ETH sent");
 			}
 		}
@@ -97,31 +104,31 @@ contract OrderBook {
 			delete orders[orderId];
 		}
 		if (order.side == Side.SELL) {
-			if (order.quoteToken == address(0)) {
+			if (QUOTE_TOKEN == address(0)) {
 				payable(order.user).transfer(quoteQuantity);
 			}
 			else {
-				IERC20(order.quoteToken).safeTransferFrom(msg.sender, order.user, quoteQuantity);
+				IERC20(QUOTE_TOKEN).safeTransferFrom(msg.sender, order.user, quoteQuantity);
 			}
-			if (order.baseToken == address(0)) {
+			if (BASE_TOKEN == address(0)) {
 				payable(msg.sender).transfer(baseQuantity);
 			}
 			else {
-				IERC20(order.baseToken).safeTransfer(msg.sender, baseQuantity);
+				IERC20(BASE_TOKEN).safeTransfer(msg.sender, baseQuantity);
 			}
 		}
 		else if (order.side == Side.BUY) {
-			if (order.baseToken == address(0)) {
+			if (BASE_TOKEN == address(0)) {
 				payable(order.user).transfer(baseQuantity);
 			}
 			else {
-				IERC20(order.baseToken).safeTransferFrom(msg.sender, order.user, baseQuantity);
+				IERC20(BASE_TOKEN).safeTransferFrom(msg.sender, order.user, baseQuantity);
 			}
-			if (order.quoteToken == address(0)) {
+			if (QUOTE_TOKEN == address(0)) {
 				payable(msg.sender).transfer(quoteQuantity);
 			}
 			else {
-				IERC20(order.quoteToken).safeTransfer(msg.sender, quoteQuantity);
+				IERC20(QUOTE_TOKEN).safeTransfer(msg.sender, quoteQuantity);
 			}
 		}
 		emit OrderFill(orderId, baseQuantity);
