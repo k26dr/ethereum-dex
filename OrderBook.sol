@@ -25,7 +25,7 @@ contract OrderBook {
         mapping(uint => Order) public orders;
         uint public orderCounter = 0; 
 
-	function placeOrder (address user, Side side, uint baseQuantity, uint quoteQuantity) internal payable {
+	function placeOrder (address user, Side side, uint baseQuantity, uint quoteQuantity) public payable returns (uint orderId) {
 		require(msg.sender == ORDERBOOK_ROUTER, "only router can send orders");
 		require(baseQuantity > 0 && quoteQuantity > 0, "zero quantity orders not permitted");
 		if (side == Side.SELL) {
@@ -52,11 +52,13 @@ contract OrderBook {
 				require(afterBalance - beforeBalance == quoteQuantity, "token error: tokens that charge transfer fees are not permitted");
 			}
 		}
-                uint orderId = ++orderCounter;
-                orders[orderId] = Order(user, baseQuantity, quoteQuantity, BASE_TOKEN, QUOTE_TOKEN, side);
+                orderId = ++orderCounter;
+                orders[orderId] = Order(user, baseQuantity, quoteQuantity, side);
+
+		return orderId;
         }
 
-	function cancelOrder (address user, uint orderId) internal {
+	function cancelOrder (address user, uint orderId) public {
 		require(msg.sender == ORDERBOOK_ROUTER, "only router can send orders");
 		Order memory order = orders[orderId];
 		require(user == order.user, "users can only cancel their own order");
@@ -77,10 +79,9 @@ contract OrderBook {
 				IERC20(QUOTE_TOKEN).safeTransfer(user, order.quoteQuantity);
 			}
 		}
-		emit OrderCanceled(orderId);
         }
 	
-	function fillOrder (address user, uint orderId, uint baseQuantity) internal payable {
+	function fillOrder (address user, uint orderId, uint baseQuantity) public payable {
 		require(msg.sender == ORDERBOOK_ROUTER, "only router can send orders");
                 Order memory order = orders[orderId];
 		uint quoteQuantity = baseQuantity * order.quoteQuantity / order.baseQuantity;
@@ -130,7 +131,6 @@ contract OrderBook {
 				IERC20(QUOTE_TOKEN).safeTransfer(user, quoteQuantity);
 			}
 		}
-		emit OrderFill(orderId, baseQuantity);
 	}
 
 }

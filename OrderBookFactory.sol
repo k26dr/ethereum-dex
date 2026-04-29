@@ -3,21 +3,22 @@ pragma solidity ^0.8.1;
 import "./OrderBook.sol";
 
 contract OrderBookFactory {
-	mapping(bytes32 => address) public orderbooks;
+	mapping(bytes32 => OrderBook) public orderbooks;
 
-	event OrderPlaced(uint orderId, address indexed user, address indexed baseToken, address indexed quoteToken, Side side, uint baseQuantity, uint quoteQuantity);
+	event OrderPlaced(uint orderId, address indexed user, address indexed baseToken, address indexed quoteToken, OrderBook.Side side, uint baseQuantity, uint quoteQuantity);
 	event OrderCanceled(uint indexed orderId);
 	event OrderFill(uint indexed orderId, uint baseQuantity);
 	
 	function deploy(address baseToken, address quoteToken) public {
-		orderbooks[keccak256(abi.encodePacked(baseToken, quoteToken))] = OrderBook(baseToken, quoteToken);
+		orderbooks[keccak256(abi.encodePacked(baseToken, quoteToken))] = new OrderBook(baseToken, quoteToken, address(this));
 	}
 
-	function placeOrder (address baseToken, address quoteToken, Side side, uint baseQuantity, uint quoteQuantity) public payable {
-		(bool success, bytes memory data) = orderbooks[keccak256(abi.encodePacked(baseToken, quoteToken))].call{
+	function placeOrder (address baseToken, address quoteToken, OrderBook.Side side, uint baseQuantity, uint quoteQuantity) public payable {
+		(bool success, bytes memory data) = address(orderbooks[keccak256(abi.encodePacked(baseToken, quoteToken))]).call{
 		    value: msg.value
 		}(abi.encodeWithSignature("placeOrder(address,uint256,uint256,uint256)", msg.sender, side, baseQuantity, quoteQuantity));
-		emit OrderPlaced(orderId, msg.sender, baseToken, quoteToken, side, baseQuantity, quoteQuantity);
+		require(success);
+		emit OrderPlaced(abi.decode(data, (uint)), msg.sender, baseToken, quoteToken, side, baseQuantity, quoteQuantity);
 	}
 
 	function cancelOrder (address baseToken, address quoteToken, uint orderId) public {
@@ -26,9 +27,10 @@ contract OrderBookFactory {
 	}
 
 	function fillOrder (address baseToken, address quoteToken, uint orderId, uint baseQuantity) public payable {
-		(bool success, bytes memory data) = orderbooks[keccak256(abi.encodePacked(baseToken, quoteToken))].call{
+		(bool success, bytes memory data) = address(orderbooks[keccak256(abi.encodePacked(baseToken, quoteToken))]).call{
 		    value: msg.value
 		}(abi.encodeWithSignature("fillOrder(address,uint256,uint256)", msg.sender, orderId, baseQuantity));
+		require(success);
 		emit OrderFill(orderId, baseQuantity);
 	}
 }
