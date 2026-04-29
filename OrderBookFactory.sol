@@ -8,17 +8,19 @@ contract OrderBookFactory {
 	event OrderPlaced(uint orderId, address indexed user, address indexed baseToken, address indexed quoteToken, OrderBook.Side side, uint baseQuantity, uint quoteQuantity);
 	event OrderCanceled(uint indexed orderId);
 	event OrderFill(uint indexed orderId, uint baseQuantity);
+
+        uint public orderCounter = 0; 
 	
 	function deploy(address baseToken, address quoteToken) public {
 		orderbooks[keccak256(abi.encodePacked(baseToken, quoteToken))] = new OrderBook(baseToken, quoteToken, address(this));
 	}
 
-	function placeOrder (address baseToken, address quoteToken, OrderBook.Side side, uint baseQuantity, uint quoteQuantity) public payable {
+	function placeOrder (uint orderId, address baseToken, address quoteToken, OrderBook.Side side, uint baseQuantity, uint quoteQuantity) public payable {
 		(bool success, bytes memory data) = address(orderbooks[keccak256(abi.encodePacked(baseToken, quoteToken))]).call{
 		    value: msg.value
-		}(abi.encodeWithSignature("placeOrder(address,uint256,uint256,uint256)", msg.sender, side, baseQuantity, quoteQuantity));
+		}(abi.encodeWithSignature("placeOrder(uint,address,uint256,uint256,uint256)", ++orderCounter, msg.sender, side, baseQuantity, quoteQuantity));
 		require(success);
-		emit OrderPlaced(abi.decode(data, (uint)), msg.sender, baseToken, quoteToken, side, baseQuantity, quoteQuantity);
+		emit OrderPlaced(orderId, msg.sender, baseToken, quoteToken, side, baseQuantity, quoteQuantity);
 	}
 
 	function cancelOrder (address baseToken, address quoteToken, uint orderId) public {

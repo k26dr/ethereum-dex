@@ -23,9 +23,8 @@ contract OrderBook {
                 Side side;
         }
         mapping(uint => Order) public orders;
-        uint public orderCounter = 0; 
 
-	function placeOrder (address user, Side side, uint baseQuantity, uint quoteQuantity) public payable returns (uint orderId) {
+	function placeOrder (uint orderId, address user, Side side, uint baseQuantity, uint quoteQuantity) public payable {
 		require(msg.sender == ORDERBOOK_ROUTER, "only router can send orders");
 		require(baseQuantity > 0 && quoteQuantity > 0, "zero quantity orders not permitted");
 		if (side == Side.SELL) {
@@ -52,10 +51,7 @@ contract OrderBook {
 				require(afterBalance - beforeBalance == quoteQuantity, "token error: tokens that charge transfer fees are not permitted");
 			}
 		}
-                orderId = ++orderCounter;
                 orders[orderId] = Order(user, baseQuantity, quoteQuantity, side);
-
-		return orderId;
         }
 
 	function cancelOrder (address user, uint orderId) public {
