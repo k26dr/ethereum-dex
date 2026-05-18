@@ -16,6 +16,7 @@ import (
 	tradecmd "dex/cmd/trade"
 	tokencmd "dex/cmd/token"
 	walletcmd "dex/cmd/wallet"
+	testcmd "dex/cmd/test"
 	"dex/service"
 
 	"github.com/spf13/cobra"
@@ -34,6 +35,7 @@ func NewCommand(svc *service.Service, ks *service.Keystore) *cobra.Command {
 	root.AddCommand(walletcmd.NewCommand(svc, ks))
 	root.AddCommand(tradecmd.NewCommand(svc, ks))
 	root.AddCommand(tokencmd.NewCommand(svc, ks))
+	root.AddCommand(testcmd.NewCommand(svc, ks))
 
 	return root
 }
