@@ -8,9 +8,9 @@ The other uses an on-chain matching engine that consumes more gas but permits fu
 
 Both versions have a risk isolation system to prevent malicious tokens from attacking other markets, and have support for both regular ERC20 and non-standard fee-for-transfer tokens.  Rebasing tokens are not supported and there is currently no plan to do so. 
 
-# Setting up a local node
+# CLI For the non-matching orderbook
 
-To compile the CLI for the Ethereum version:
+The non-matching orderbook requires a CLI to fill orders. It is still under development, but you can compile the existing version as such:
 
 ```
 cd cli_go
