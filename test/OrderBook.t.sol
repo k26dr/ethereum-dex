@@ -176,15 +176,15 @@ contract OrderBookTest is Test {
 	function testBalances() public {
 		// burn all coins
 		vm.prank(user1);
-		EURT.transfer(address(1), EURT.balanceOf(user1));
+		assertTrue(EURT.transfer(address(1), EURT.balanceOf(user1)), "EURT burn transfer user1 failed");
 		assertEq(USDC.balanceOf(user1), 100e8);
 		uint USDCuser1bal = USDC.balanceOf(user1);
 		vm.prank(user1);
-		USDC.transfer(address(1), USDCuser1bal);
+		assertTrue(USDC.transfer(address(1), USDCuser1bal), "USDC burn transfer user1 failed");
 		vm.prank(user2);
-		EURT.transfer(address(1), EURT.balanceOf(user2));
+		assertTrue(EURT.transfer(address(1), EURT.balanceOf(user2)), "EURT burn transfer user2 failed");
 		vm.prank(user2);
-		USDC.transfer(address(1), USDC.balanceOf(user2));
+		assertTrue(USDC.transfer(address(1), USDC.balanceOf(user2)), "USDC burn transfer user2 failed");
 		assertEq(EURT.balanceOf(user2), 0);
 		assertEq(EURT.balanceOf(user1), 0);
 		assertEq(USDC.balanceOf(user1), 0);

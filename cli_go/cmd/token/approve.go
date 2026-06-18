@@ -82,12 +82,15 @@ func newApproveCommand(cfg *service.Service, ks *service.Keystore) *cobra.Comman
 			fmt.Fprintf(cmd.OutOrStdout(), "  Token:   %s\n", service.FormatTokenRef(meta.Symbol, tokenAddress.Hex()))
 			fmt.Fprintf(cmd.OutOrStdout(), "  Spender: %s\n", spenderAddress.Hex())
 			fmt.Fprintf(cmd.OutOrStdout(), "  Amount:  %s (raw: %s)\n", amount.FormatUnits(approveAmount, meta.Decimals), approveAmount.String())
-			ok, err := prompt.Confirm("Proceed and send approve transaction")
-			if err != nil {
-				return err
-			}
-			if !ok {
-				return fmt.Errorf("aborted")
+			yes, _ := cmd.Flags().GetBool("yes")
+			if !yes {
+				ok, err := prompt.Confirm("Proceed and send approve transaction")
+				if err != nil {
+					return err
+				}
+				if !ok {
+					return fmt.Errorf("aborted")
+				}
 			}
 
 			walletService, err := service.NewWallet(ks, selectedWallet)
@@ -125,6 +128,7 @@ func newApproveCommand(cfg *service.Service, ks *service.Keystore) *cobra.Comman
 	cmd.Flags().String("spender", "", "Spender address (defaults to config.contract.address)")
 	cmd.Flags().String("amount", "", "Allowance amount (decimal token units, e.g. 1.5)")
 	cmd.Flags().String("wallet", "", "Wallet address to sign with")
+	cmd.Flags().BoolP("yes", "y", false, "Skip confirmation prompt")
 	return cmd
 }
 
