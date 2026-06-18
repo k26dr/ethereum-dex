@@ -87,12 +87,15 @@ func newSendCommand(cfg *service.Service, ks *service.Keystore) *cobra.Command {
 			fmt.Fprintf(cmd.OutOrStdout(), "  Recipient: %s\n", toAddress.Hex())
 			fmt.Fprintf(cmd.OutOrStdout(), "  Available: %s (raw: %s)\n", amount.FormatUnits(balance, meta.Decimals), balance.String())
 			fmt.Fprintf(cmd.OutOrStdout(), "  Amount:    %s (raw: %s)\n", amount.FormatUnits(sendAmount, meta.Decimals), sendAmount.String())
-			ok, err := prompt.Confirm("Proceed and send transfer transaction")
-			if err != nil {
-				return err
-			}
-			if !ok {
-				return fmt.Errorf("aborted")
+			yes, _ := cmd.Flags().GetBool("yes")
+			if !yes {
+				ok, err := prompt.Confirm("Proceed and send transfer transaction")
+				if err != nil {
+					return err
+				}
+				if !ok {
+					return fmt.Errorf("aborted")
+				}
 			}
 
 			// Ask for password/decrypt only right before signing and sending.
@@ -131,6 +134,7 @@ func newSendCommand(cfg *service.Service, ks *service.Keystore) *cobra.Command {
 	cmd.Flags().String("to", "", "Recipient address")
 	cmd.Flags().String("amount", "", "Token amount (decimal token units, e.g. 1.5)")
 	cmd.Flags().String("wallet", "", "Wallet address to sign with")
+	cmd.Flags().BoolP("yes", "y", false, "Skip confirmation prompt")
 	return cmd
 }
 

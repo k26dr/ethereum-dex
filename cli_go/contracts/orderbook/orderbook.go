@@ -1,11 +1,3 @@
-// Copyright © 2026 0xTrooper (on Github)
-// 
-// Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the “Software”), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
-// 
-// The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
-// 
-// THE SOFTWARE IS PROVIDED “AS IS”, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-
 // Code generated - DO NOT EDIT.
 // This file is a generated binding and any manual changes will be lost.
 
@@ -37,9 +29,17 @@ var (
 	_ = abi.ConvertType
 )
 
+// OrderBookOrder is an auto generated low-level Go binding around an user-defined struct.
+type OrderBookOrder struct {
+	User         common.Address
+	BaseQuantity *big.Int
+	Price        *big.Int
+	Side         uint8
+}
+
 // OrderBookMetaData contains all meta data concerning the OrderBook contract.
 var OrderBookMetaData = &bind.MetaData{
-	ABI: "[{\"inputs\":[{\"internalType\":\"bytes32\",\"name\":\"\",\"type\":\"bytes32\"}],\"name\":\"banks\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"baseToken\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"quoteToken\",\"type\":\"address\"}],\"name\":\"bankhash\",\"outputs\":[{\"internalType\":\"bytes32\",\"name\":\"\",\"type\":\"bytes32\"}],\"stateMutability\":\"pure\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"orderId\",\"type\":\"uint256\"}],\"name\":\"cancelOrder\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"baseToken\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"quoteToken\",\"type\":\"address\"}],\"name\":\"createMarket\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"orderId\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"baseQuantity\",\"type\":\"uint256\"}],\"name\":\"fillOrder\",\"outputs\":[],\"stateMutability\":\"payable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"orderCounter\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"name\":\"orders\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"user\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"baseQuantity\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"quoteQuantity\",\"type\":\"uint256\"},{\"internalType\":\"address\",\"name\":\"baseToken\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"quoteToken\",\"type\":\"address\"},{\"internalType\":\"uint8\",\"name\":\"side\",\"type\":\"uint8\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"baseToken\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"quoteToken\",\"type\":\"address\"},{\"internalType\":\"uint8\",\"name\":\"side\",\"type\":\"uint8\"},{\"internalType\":\"uint256\",\"name\":\"baseQuantity\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"quoteQuantity\",\"type\":\"uint256\"}],\"name\":\"placeOrder\",\"outputs\":[],\"stateMutability\":\"payable\",\"type\":\"function\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"uint256\",\"name\":\"orderId\",\"type\":\"uint256\"}],\"name\":\"OrderCanceled\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"uint256\",\"name\":\"orderId\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"baseQuantity\",\"type\":\"uint256\"}],\"name\":\"OrderFill\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"orderId\",\"type\":\"uint256\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"user\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"baseToken\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"quoteToken\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint8\",\"name\":\"side\",\"type\":\"uint8\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"baseQuantity\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"quoteQuantity\",\"type\":\"uint256\"}],\"name\":\"OrderPlaced\",\"type\":\"event\"}]",
+	ABI: "[{\"type\":\"function\",\"name\":\"cancelOrder\",\"inputs\":[{\"name\":\"baseToken\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"quoteToken\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"orderId\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"createMarket\",\"inputs\":[{\"name\":\"baseToken\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"quoteToken\",\"type\":\"address\",\"internalType\":\"address\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"fillOrder\",\"inputs\":[{\"name\":\"orderId\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"baseToken\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"quoteToken\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"baseQuantityToFill\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"outputs\":[],\"stateMutability\":\"payable\"},{\"type\":\"function\",\"name\":\"getBankAddress\",\"inputs\":[{\"name\":\"baseToken\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"quoteToken\",\"type\":\"address\",\"internalType\":\"address\"}],\"outputs\":[{\"name\":\"\",\"type\":\"address\",\"internalType\":\"addresspayable\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"getorder\",\"inputs\":[{\"name\":\"baseToken\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"quoteToken\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"orderId\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"outputs\":[{\"name\":\"\",\"type\":\"tuple\",\"internalType\":\"structOrderBook.Order\",\"components\":[{\"name\":\"user\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"baseQuantity\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"price\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"side\",\"type\":\"uint8\",\"internalType\":\"enumOrderBook.Side\"}]}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"orderCounter\",\"inputs\":[],\"outputs\":[{\"name\":\"\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"placeOrder\",\"inputs\":[{\"name\":\"baseToken\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"quoteToken\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"side\",\"type\":\"uint8\",\"internalType\":\"enumOrderBook.Side\"},{\"name\":\"baseQuantity\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"price\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"outputs\":[{\"name\":\"orderId\",\"type\":\"uint256\",\"internalType\":\"uint256\"}],\"stateMutability\":\"payable\"},{\"type\":\"event\",\"name\":\"OrderCanceled\",\"inputs\":[{\"name\":\"orderId\",\"type\":\"uint256\",\"indexed\":true,\"internalType\":\"uint256\"}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"OrderFill\",\"inputs\":[{\"name\":\"orderId\",\"type\":\"uint256\",\"indexed\":true,\"internalType\":\"uint256\"},{\"name\":\"baseQuantity\",\"type\":\"uint256\",\"indexed\":false,\"internalType\":\"uint256\"}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"OrderPlaced\",\"inputs\":[{\"name\":\"orderId\",\"type\":\"uint256\",\"indexed\":true,\"internalType\":\"uint256\"},{\"name\":\"user\",\"type\":\"address\",\"indexed\":true,\"internalType\":\"address\"},{\"name\":\"baseToken\",\"type\":\"address\",\"indexed\":false,\"internalType\":\"address\"},{\"name\":\"quoteToken\",\"type\":\"address\",\"indexed\":false,\"internalType\":\"address\"},{\"name\":\"markethash\",\"type\":\"bytes32\",\"indexed\":true,\"internalType\":\"bytes32\"},{\"name\":\"side\",\"type\":\"uint8\",\"indexed\":false,\"internalType\":\"enumOrderBook.Side\"},{\"name\":\"baseQuantity\",\"type\":\"uint256\",\"indexed\":false,\"internalType\":\"uint256\"},{\"name\":\"price\",\"type\":\"uint256\",\"indexed\":false,\"internalType\":\"uint256\"}],\"anonymous\":false},{\"type\":\"error\",\"name\":\"SafeERC20FailedOperation\",\"inputs\":[{\"name\":\"token\",\"type\":\"address\",\"internalType\":\"address\"}]}]",
 }
 
 // OrderBookABI is the input ABI used to generate the binding from.
@@ -188,43 +188,12 @@ func (_OrderBook *OrderBookTransactorRaw) Transact(opts *bind.TransactOpts, meth
 	return _OrderBook.Contract.contract.Transact(opts, method, params...)
 }
 
-// Bankhash is a free data retrieval call binding the contract method 0x177d1544.
+// GetBankAddress is a free data retrieval call binding the contract method 0x6ae6adb6.
 //
-// Solidity: function bankhash(address baseToken, address quoteToken) pure returns(bytes32)
-func (_OrderBook *OrderBookCaller) Bankhash(opts *bind.CallOpts, baseToken common.Address, quoteToken common.Address) ([32]byte, error) {
+// Solidity: function getBankAddress(address baseToken, address quoteToken) view returns(address)
+func (_OrderBook *OrderBookCaller) GetBankAddress(opts *bind.CallOpts, baseToken common.Address, quoteToken common.Address) (common.Address, error) {
 	var out []interface{}
-	err := _OrderBook.contract.Call(opts, &out, "bankhash", baseToken, quoteToken)
-
-	if err != nil {
-		return *new([32]byte), err
-	}
-
-	out0 := *abi.ConvertType(out[0], new([32]byte)).(*[32]byte)
-
-	return out0, err
-
-}
-
-// Bankhash is a free data retrieval call binding the contract method 0x177d1544.
-//
-// Solidity: function bankhash(address baseToken, address quoteToken) pure returns(bytes32)
-func (_OrderBook *OrderBookSession) Bankhash(baseToken common.Address, quoteToken common.Address) ([32]byte, error) {
-	return _OrderBook.Contract.Bankhash(&_OrderBook.CallOpts, baseToken, quoteToken)
-}
-
-// Bankhash is a free data retrieval call binding the contract method 0x177d1544.
-//
-// Solidity: function bankhash(address baseToken, address quoteToken) pure returns(bytes32)
-func (_OrderBook *OrderBookCallerSession) Bankhash(baseToken common.Address, quoteToken common.Address) ([32]byte, error) {
-	return _OrderBook.Contract.Bankhash(&_OrderBook.CallOpts, baseToken, quoteToken)
-}
-
-// Banks is a free data retrieval call binding the contract method 0x26ef0d10.
-//
-// Solidity: function banks(bytes32 ) view returns(address)
-func (_OrderBook *OrderBookCaller) Banks(opts *bind.CallOpts, arg0 [32]byte) (common.Address, error) {
-	var out []interface{}
-	err := _OrderBook.contract.Call(opts, &out, "banks", arg0)
+	err := _OrderBook.contract.Call(opts, &out, "getBankAddress", baseToken, quoteToken)
 
 	if err != nil {
 		return *new(common.Address), err
@@ -236,18 +205,49 @@ func (_OrderBook *OrderBookCaller) Banks(opts *bind.CallOpts, arg0 [32]byte) (co
 
 }
 
-// Banks is a free data retrieval call binding the contract method 0x26ef0d10.
+// GetBankAddress is a free data retrieval call binding the contract method 0x6ae6adb6.
 //
-// Solidity: function banks(bytes32 ) view returns(address)
-func (_OrderBook *OrderBookSession) Banks(arg0 [32]byte) (common.Address, error) {
-	return _OrderBook.Contract.Banks(&_OrderBook.CallOpts, arg0)
+// Solidity: function getBankAddress(address baseToken, address quoteToken) view returns(address)
+func (_OrderBook *OrderBookSession) GetBankAddress(baseToken common.Address, quoteToken common.Address) (common.Address, error) {
+	return _OrderBook.Contract.GetBankAddress(&_OrderBook.CallOpts, baseToken, quoteToken)
 }
 
-// Banks is a free data retrieval call binding the contract method 0x26ef0d10.
+// GetBankAddress is a free data retrieval call binding the contract method 0x6ae6adb6.
 //
-// Solidity: function banks(bytes32 ) view returns(address)
-func (_OrderBook *OrderBookCallerSession) Banks(arg0 [32]byte) (common.Address, error) {
-	return _OrderBook.Contract.Banks(&_OrderBook.CallOpts, arg0)
+// Solidity: function getBankAddress(address baseToken, address quoteToken) view returns(address)
+func (_OrderBook *OrderBookCallerSession) GetBankAddress(baseToken common.Address, quoteToken common.Address) (common.Address, error) {
+	return _OrderBook.Contract.GetBankAddress(&_OrderBook.CallOpts, baseToken, quoteToken)
+}
+
+// Getorder is a free data retrieval call binding the contract method 0xaede72ff.
+//
+// Solidity: function getorder(address baseToken, address quoteToken, uint256 orderId) view returns((address,uint256,uint256,uint8))
+func (_OrderBook *OrderBookCaller) Getorder(opts *bind.CallOpts, baseToken common.Address, quoteToken common.Address, orderId *big.Int) (OrderBookOrder, error) {
+	var out []interface{}
+	err := _OrderBook.contract.Call(opts, &out, "getorder", baseToken, quoteToken, orderId)
+
+	if err != nil {
+		return *new(OrderBookOrder), err
+	}
+
+	out0 := *abi.ConvertType(out[0], new(OrderBookOrder)).(*OrderBookOrder)
+
+	return out0, err
+
+}
+
+// Getorder is a free data retrieval call binding the contract method 0xaede72ff.
+//
+// Solidity: function getorder(address baseToken, address quoteToken, uint256 orderId) view returns((address,uint256,uint256,uint8))
+func (_OrderBook *OrderBookSession) Getorder(baseToken common.Address, quoteToken common.Address, orderId *big.Int) (OrderBookOrder, error) {
+	return _OrderBook.Contract.Getorder(&_OrderBook.CallOpts, baseToken, quoteToken, orderId)
+}
+
+// Getorder is a free data retrieval call binding the contract method 0xaede72ff.
+//
+// Solidity: function getorder(address baseToken, address quoteToken, uint256 orderId) view returns((address,uint256,uint256,uint8))
+func (_OrderBook *OrderBookCallerSession) Getorder(baseToken common.Address, quoteToken common.Address, orderId *big.Int) (OrderBookOrder, error) {
+	return _OrderBook.Contract.Getorder(&_OrderBook.CallOpts, baseToken, quoteToken, orderId)
 }
 
 // OrderCounter is a free data retrieval call binding the contract method 0xb789bf52.
@@ -281,90 +281,25 @@ func (_OrderBook *OrderBookCallerSession) OrderCounter() (*big.Int, error) {
 	return _OrderBook.Contract.OrderCounter(&_OrderBook.CallOpts)
 }
 
-// Orders is a free data retrieval call binding the contract method 0xa85c38ef.
+// CancelOrder is a paid mutator transaction binding the contract method 0x9a3bc1d7.
 //
-// Solidity: function orders(uint256 ) view returns(address user, uint256 baseQuantity, uint256 quoteQuantity, address baseToken, address quoteToken, uint8 side)
-func (_OrderBook *OrderBookCaller) Orders(opts *bind.CallOpts, arg0 *big.Int) (struct {
-	User          common.Address
-	BaseQuantity  *big.Int
-	QuoteQuantity *big.Int
-	BaseToken     common.Address
-	QuoteToken    common.Address
-	Side          uint8
-}, error) {
-	var out []interface{}
-	err := _OrderBook.contract.Call(opts, &out, "orders", arg0)
-
-	outstruct := new(struct {
-		User          common.Address
-		BaseQuantity  *big.Int
-		QuoteQuantity *big.Int
-		BaseToken     common.Address
-		QuoteToken    common.Address
-		Side          uint8
-	})
-	if err != nil {
-		return *outstruct, err
-	}
-
-	outstruct.User = *abi.ConvertType(out[0], new(common.Address)).(*common.Address)
-	outstruct.BaseQuantity = *abi.ConvertType(out[1], new(*big.Int)).(**big.Int)
-	outstruct.QuoteQuantity = *abi.ConvertType(out[2], new(*big.Int)).(**big.Int)
-	outstruct.BaseToken = *abi.ConvertType(out[3], new(common.Address)).(*common.Address)
-	outstruct.QuoteToken = *abi.ConvertType(out[4], new(common.Address)).(*common.Address)
-	outstruct.Side = *abi.ConvertType(out[5], new(uint8)).(*uint8)
-
-	return *outstruct, err
-
+// Solidity: function cancelOrder(address baseToken, address quoteToken, uint256 orderId) returns()
+func (_OrderBook *OrderBookTransactor) CancelOrder(opts *bind.TransactOpts, baseToken common.Address, quoteToken common.Address, orderId *big.Int) (*types.Transaction, error) {
+	return _OrderBook.contract.Transact(opts, "cancelOrder", baseToken, quoteToken, orderId)
 }
 
-// Orders is a free data retrieval call binding the contract method 0xa85c38ef.
+// CancelOrder is a paid mutator transaction binding the contract method 0x9a3bc1d7.
 //
-// Solidity: function orders(uint256 ) view returns(address user, uint256 baseQuantity, uint256 quoteQuantity, address baseToken, address quoteToken, uint8 side)
-func (_OrderBook *OrderBookSession) Orders(arg0 *big.Int) (struct {
-	User          common.Address
-	BaseQuantity  *big.Int
-	QuoteQuantity *big.Int
-	BaseToken     common.Address
-	QuoteToken    common.Address
-	Side          uint8
-}, error) {
-	return _OrderBook.Contract.Orders(&_OrderBook.CallOpts, arg0)
+// Solidity: function cancelOrder(address baseToken, address quoteToken, uint256 orderId) returns()
+func (_OrderBook *OrderBookSession) CancelOrder(baseToken common.Address, quoteToken common.Address, orderId *big.Int) (*types.Transaction, error) {
+	return _OrderBook.Contract.CancelOrder(&_OrderBook.TransactOpts, baseToken, quoteToken, orderId)
 }
 
-// Orders is a free data retrieval call binding the contract method 0xa85c38ef.
+// CancelOrder is a paid mutator transaction binding the contract method 0x9a3bc1d7.
 //
-// Solidity: function orders(uint256 ) view returns(address user, uint256 baseQuantity, uint256 quoteQuantity, address baseToken, address quoteToken, uint8 side)
-func (_OrderBook *OrderBookCallerSession) Orders(arg0 *big.Int) (struct {
-	User          common.Address
-	BaseQuantity  *big.Int
-	QuoteQuantity *big.Int
-	BaseToken     common.Address
-	QuoteToken    common.Address
-	Side          uint8
-}, error) {
-	return _OrderBook.Contract.Orders(&_OrderBook.CallOpts, arg0)
-}
-
-// CancelOrder is a paid mutator transaction binding the contract method 0x514fcac7.
-//
-// Solidity: function cancelOrder(uint256 orderId) returns()
-func (_OrderBook *OrderBookTransactor) CancelOrder(opts *bind.TransactOpts, orderId *big.Int) (*types.Transaction, error) {
-	return _OrderBook.contract.Transact(opts, "cancelOrder", orderId)
-}
-
-// CancelOrder is a paid mutator transaction binding the contract method 0x514fcac7.
-//
-// Solidity: function cancelOrder(uint256 orderId) returns()
-func (_OrderBook *OrderBookSession) CancelOrder(orderId *big.Int) (*types.Transaction, error) {
-	return _OrderBook.Contract.CancelOrder(&_OrderBook.TransactOpts, orderId)
-}
-
-// CancelOrder is a paid mutator transaction binding the contract method 0x514fcac7.
-//
-// Solidity: function cancelOrder(uint256 orderId) returns()
-func (_OrderBook *OrderBookTransactorSession) CancelOrder(orderId *big.Int) (*types.Transaction, error) {
-	return _OrderBook.Contract.CancelOrder(&_OrderBook.TransactOpts, orderId)
+// Solidity: function cancelOrder(address baseToken, address quoteToken, uint256 orderId) returns()
+func (_OrderBook *OrderBookTransactorSession) CancelOrder(baseToken common.Address, quoteToken common.Address, orderId *big.Int) (*types.Transaction, error) {
+	return _OrderBook.Contract.CancelOrder(&_OrderBook.TransactOpts, baseToken, quoteToken, orderId)
 }
 
 // CreateMarket is a paid mutator transaction binding the contract method 0x207fd126.
@@ -388,46 +323,46 @@ func (_OrderBook *OrderBookTransactorSession) CreateMarket(baseToken common.Addr
 	return _OrderBook.Contract.CreateMarket(&_OrderBook.TransactOpts, baseToken, quoteToken)
 }
 
-// FillOrder is a paid mutator transaction binding the contract method 0xc37dfc5b.
+// FillOrder is a paid mutator transaction binding the contract method 0x590f6f68.
 //
-// Solidity: function fillOrder(uint256 orderId, uint256 baseQuantity) payable returns()
-func (_OrderBook *OrderBookTransactor) FillOrder(opts *bind.TransactOpts, orderId *big.Int, baseQuantity *big.Int) (*types.Transaction, error) {
-	return _OrderBook.contract.Transact(opts, "fillOrder", orderId, baseQuantity)
+// Solidity: function fillOrder(uint256 orderId, address baseToken, address quoteToken, uint256 baseQuantityToFill) payable returns()
+func (_OrderBook *OrderBookTransactor) FillOrder(opts *bind.TransactOpts, orderId *big.Int, baseToken common.Address, quoteToken common.Address, baseQuantityToFill *big.Int) (*types.Transaction, error) {
+	return _OrderBook.contract.Transact(opts, "fillOrder", orderId, baseToken, quoteToken, baseQuantityToFill)
 }
 
-// FillOrder is a paid mutator transaction binding the contract method 0xc37dfc5b.
+// FillOrder is a paid mutator transaction binding the contract method 0x590f6f68.
 //
-// Solidity: function fillOrder(uint256 orderId, uint256 baseQuantity) payable returns()
-func (_OrderBook *OrderBookSession) FillOrder(orderId *big.Int, baseQuantity *big.Int) (*types.Transaction, error) {
-	return _OrderBook.Contract.FillOrder(&_OrderBook.TransactOpts, orderId, baseQuantity)
+// Solidity: function fillOrder(uint256 orderId, address baseToken, address quoteToken, uint256 baseQuantityToFill) payable returns()
+func (_OrderBook *OrderBookSession) FillOrder(orderId *big.Int, baseToken common.Address, quoteToken common.Address, baseQuantityToFill *big.Int) (*types.Transaction, error) {
+	return _OrderBook.Contract.FillOrder(&_OrderBook.TransactOpts, orderId, baseToken, quoteToken, baseQuantityToFill)
 }
 
-// FillOrder is a paid mutator transaction binding the contract method 0xc37dfc5b.
+// FillOrder is a paid mutator transaction binding the contract method 0x590f6f68.
 //
-// Solidity: function fillOrder(uint256 orderId, uint256 baseQuantity) payable returns()
-func (_OrderBook *OrderBookTransactorSession) FillOrder(orderId *big.Int, baseQuantity *big.Int) (*types.Transaction, error) {
-	return _OrderBook.Contract.FillOrder(&_OrderBook.TransactOpts, orderId, baseQuantity)
-}
-
-// PlaceOrder is a paid mutator transaction binding the contract method 0xeebe0f3d.
-//
-// Solidity: function placeOrder(address baseToken, address quoteToken, uint8 side, uint256 baseQuantity, uint256 quoteQuantity) payable returns()
-func (_OrderBook *OrderBookTransactor) PlaceOrder(opts *bind.TransactOpts, baseToken common.Address, quoteToken common.Address, side uint8, baseQuantity *big.Int, quoteQuantity *big.Int) (*types.Transaction, error) {
-	return _OrderBook.contract.Transact(opts, "placeOrder", baseToken, quoteToken, side, baseQuantity, quoteQuantity)
+// Solidity: function fillOrder(uint256 orderId, address baseToken, address quoteToken, uint256 baseQuantityToFill) payable returns()
+func (_OrderBook *OrderBookTransactorSession) FillOrder(orderId *big.Int, baseToken common.Address, quoteToken common.Address, baseQuantityToFill *big.Int) (*types.Transaction, error) {
+	return _OrderBook.Contract.FillOrder(&_OrderBook.TransactOpts, orderId, baseToken, quoteToken, baseQuantityToFill)
 }
 
 // PlaceOrder is a paid mutator transaction binding the contract method 0xeebe0f3d.
 //
-// Solidity: function placeOrder(address baseToken, address quoteToken, uint8 side, uint256 baseQuantity, uint256 quoteQuantity) payable returns()
-func (_OrderBook *OrderBookSession) PlaceOrder(baseToken common.Address, quoteToken common.Address, side uint8, baseQuantity *big.Int, quoteQuantity *big.Int) (*types.Transaction, error) {
-	return _OrderBook.Contract.PlaceOrder(&_OrderBook.TransactOpts, baseToken, quoteToken, side, baseQuantity, quoteQuantity)
+// Solidity: function placeOrder(address baseToken, address quoteToken, uint8 side, uint256 baseQuantity, uint256 price) payable returns(uint256 orderId)
+func (_OrderBook *OrderBookTransactor) PlaceOrder(opts *bind.TransactOpts, baseToken common.Address, quoteToken common.Address, side uint8, baseQuantity *big.Int, price *big.Int) (*types.Transaction, error) {
+	return _OrderBook.contract.Transact(opts, "placeOrder", baseToken, quoteToken, side, baseQuantity, price)
 }
 
 // PlaceOrder is a paid mutator transaction binding the contract method 0xeebe0f3d.
 //
-// Solidity: function placeOrder(address baseToken, address quoteToken, uint8 side, uint256 baseQuantity, uint256 quoteQuantity) payable returns()
-func (_OrderBook *OrderBookTransactorSession) PlaceOrder(baseToken common.Address, quoteToken common.Address, side uint8, baseQuantity *big.Int, quoteQuantity *big.Int) (*types.Transaction, error) {
-	return _OrderBook.Contract.PlaceOrder(&_OrderBook.TransactOpts, baseToken, quoteToken, side, baseQuantity, quoteQuantity)
+// Solidity: function placeOrder(address baseToken, address quoteToken, uint8 side, uint256 baseQuantity, uint256 price) payable returns(uint256 orderId)
+func (_OrderBook *OrderBookSession) PlaceOrder(baseToken common.Address, quoteToken common.Address, side uint8, baseQuantity *big.Int, price *big.Int) (*types.Transaction, error) {
+	return _OrderBook.Contract.PlaceOrder(&_OrderBook.TransactOpts, baseToken, quoteToken, side, baseQuantity, price)
+}
+
+// PlaceOrder is a paid mutator transaction binding the contract method 0xeebe0f3d.
+//
+// Solidity: function placeOrder(address baseToken, address quoteToken, uint8 side, uint256 baseQuantity, uint256 price) payable returns(uint256 orderId)
+func (_OrderBook *OrderBookTransactorSession) PlaceOrder(baseToken common.Address, quoteToken common.Address, side uint8, baseQuantity *big.Int, price *big.Int) (*types.Transaction, error) {
+	return _OrderBook.Contract.PlaceOrder(&_OrderBook.TransactOpts, baseToken, quoteToken, side, baseQuantity, price)
 }
 
 // OrderBookOrderCanceledIterator is returned from FilterOrderCanceled and is used to iterate over the raw logs and unpacked data for OrderCanceled events raised by the OrderBook contract.
@@ -788,60 +723,63 @@ func (it *OrderBookOrderPlacedIterator) Close() error {
 
 // OrderBookOrderPlaced represents a OrderPlaced event raised by the OrderBook contract.
 type OrderBookOrderPlaced struct {
-	OrderId       *big.Int
-	User          common.Address
-	BaseToken     common.Address
-	QuoteToken    common.Address
-	Side          uint8
-	BaseQuantity  *big.Int
-	QuoteQuantity *big.Int
-	Raw           types.Log // Blockchain specific contextual infos
+	OrderId      *big.Int
+	User         common.Address
+	BaseToken    common.Address
+	QuoteToken   common.Address
+	Markethash   [32]byte
+	Side         uint8
+	BaseQuantity *big.Int
+	Price        *big.Int
+	Raw          types.Log // Blockchain specific contextual infos
 }
 
-// FilterOrderPlaced is a free log retrieval operation binding the contract event 0xb9b7b3573b58f83fcdacc81a3a41fb977ce6c47a83b1300fe914b97efe24533a.
+// FilterOrderPlaced is a free log retrieval operation binding the contract event 0x94a398e9c4c7cdd1b360f86f5759cd9e2c94d2991c809b56003158d30626ec17.
 //
-// Solidity: event OrderPlaced(uint256 orderId, address indexed user, address indexed baseToken, address indexed quoteToken, uint8 side, uint256 baseQuantity, uint256 quoteQuantity)
-func (_OrderBook *OrderBookFilterer) FilterOrderPlaced(opts *bind.FilterOpts, user []common.Address, baseToken []common.Address, quoteToken []common.Address) (*OrderBookOrderPlacedIterator, error) {
+// Solidity: event OrderPlaced(uint256 indexed orderId, address indexed user, address baseToken, address quoteToken, bytes32 indexed markethash, uint8 side, uint256 baseQuantity, uint256 price)
+func (_OrderBook *OrderBookFilterer) FilterOrderPlaced(opts *bind.FilterOpts, orderId []*big.Int, user []common.Address, markethash [][32]byte) (*OrderBookOrderPlacedIterator, error) {
 
+	var orderIdRule []interface{}
+	for _, orderIdItem := range orderId {
+		orderIdRule = append(orderIdRule, orderIdItem)
+	}
 	var userRule []interface{}
 	for _, userItem := range user {
 		userRule = append(userRule, userItem)
 	}
-	var baseTokenRule []interface{}
-	for _, baseTokenItem := range baseToken {
-		baseTokenRule = append(baseTokenRule, baseTokenItem)
-	}
-	var quoteTokenRule []interface{}
-	for _, quoteTokenItem := range quoteToken {
-		quoteTokenRule = append(quoteTokenRule, quoteTokenItem)
+
+	var markethashRule []interface{}
+	for _, markethashItem := range markethash {
+		markethashRule = append(markethashRule, markethashItem)
 	}
 
-	logs, sub, err := _OrderBook.contract.FilterLogs(opts, "OrderPlaced", userRule, baseTokenRule, quoteTokenRule)
+	logs, sub, err := _OrderBook.contract.FilterLogs(opts, "OrderPlaced", orderIdRule, userRule, markethashRule)
 	if err != nil {
 		return nil, err
 	}
 	return &OrderBookOrderPlacedIterator{contract: _OrderBook.contract, event: "OrderPlaced", logs: logs, sub: sub}, nil
 }
 
-// WatchOrderPlaced is a free log subscription operation binding the contract event 0xb9b7b3573b58f83fcdacc81a3a41fb977ce6c47a83b1300fe914b97efe24533a.
+// WatchOrderPlaced is a free log subscription operation binding the contract event 0x94a398e9c4c7cdd1b360f86f5759cd9e2c94d2991c809b56003158d30626ec17.
 //
-// Solidity: event OrderPlaced(uint256 orderId, address indexed user, address indexed baseToken, address indexed quoteToken, uint8 side, uint256 baseQuantity, uint256 quoteQuantity)
-func (_OrderBook *OrderBookFilterer) WatchOrderPlaced(opts *bind.WatchOpts, sink chan<- *OrderBookOrderPlaced, user []common.Address, baseToken []common.Address, quoteToken []common.Address) (event.Subscription, error) {
+// Solidity: event OrderPlaced(uint256 indexed orderId, address indexed user, address baseToken, address quoteToken, bytes32 indexed markethash, uint8 side, uint256 baseQuantity, uint256 price)
+func (_OrderBook *OrderBookFilterer) WatchOrderPlaced(opts *bind.WatchOpts, sink chan<- *OrderBookOrderPlaced, orderId []*big.Int, user []common.Address, markethash [][32]byte) (event.Subscription, error) {
 
+	var orderIdRule []interface{}
+	for _, orderIdItem := range orderId {
+		orderIdRule = append(orderIdRule, orderIdItem)
+	}
 	var userRule []interface{}
 	for _, userItem := range user {
 		userRule = append(userRule, userItem)
 	}
-	var baseTokenRule []interface{}
-	for _, baseTokenItem := range baseToken {
-		baseTokenRule = append(baseTokenRule, baseTokenItem)
-	}
-	var quoteTokenRule []interface{}
-	for _, quoteTokenItem := range quoteToken {
-		quoteTokenRule = append(quoteTokenRule, quoteTokenItem)
+
+	var markethashRule []interface{}
+	for _, markethashItem := range markethash {
+		markethashRule = append(markethashRule, markethashItem)
 	}
 
-	logs, sub, err := _OrderBook.contract.WatchLogs(opts, "OrderPlaced", userRule, baseTokenRule, quoteTokenRule)
+	logs, sub, err := _OrderBook.contract.WatchLogs(opts, "OrderPlaced", orderIdRule, userRule, markethashRule)
 	if err != nil {
 		return nil, err
 	}
@@ -873,9 +811,9 @@ func (_OrderBook *OrderBookFilterer) WatchOrderPlaced(opts *bind.WatchOpts, sink
 	}), nil
 }
 
-// ParseOrderPlaced is a log parse operation binding the contract event 0xb9b7b3573b58f83fcdacc81a3a41fb977ce6c47a83b1300fe914b97efe24533a.
+// ParseOrderPlaced is a log parse operation binding the contract event 0x94a398e9c4c7cdd1b360f86f5759cd9e2c94d2991c809b56003158d30626ec17.
 //
-// Solidity: event OrderPlaced(uint256 orderId, address indexed user, address indexed baseToken, address indexed quoteToken, uint8 side, uint256 baseQuantity, uint256 quoteQuantity)
+// Solidity: event OrderPlaced(uint256 indexed orderId, address indexed user, address baseToken, address quoteToken, bytes32 indexed markethash, uint8 side, uint256 baseQuantity, uint256 price)
 func (_OrderBook *OrderBookFilterer) ParseOrderPlaced(log types.Log) (*OrderBookOrderPlaced, error) {
 	event := new(OrderBookOrderPlaced)
 	if err := _OrderBook.contract.UnpackLog(event, "OrderPlaced", log); err != nil {

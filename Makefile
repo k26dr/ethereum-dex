@@ -29,12 +29,13 @@ ANVIL_PID_FILE := $(ANVIL_RUN_DIR)/anvil.pid
 
 -include $(ANVIL_STATE_FILE)
 
-.PHONY: help anvil check-tools check-rpc ensure-anvil stop terminate init-state build-cli build-forge deploy deploy-and-configure-cli import-deployer-wallet create-contract create-market create-tokens mint add-account testnet testnet-auto show-state
+.PHONY: help anvil check-tools check-rpc ensure-anvil stop terminate init-state build-cli build_cli build-forge deploy deploy-and-configure-cli import-deployer-wallet create-contract create-market create-tokens mint add-account testnet show-state
 
 help:
 	@echo "Anvil + DEX local workflow"
 	@echo ""
 	@echo "make anvil                         # start local Anvil node"
+	@echo "make build_cli                     # rebuild CLI binary (alias of build-cli)"
 	@echo "make deploy                        # deploy OrderBook and persist ORDERBOOK_ADDRESS"
 	@echo "make deploy-and-configure-cli      # build Go CLI, deploy, set rpc/chain-id/contract in CLI config"
 	@echo "make create-contract               # create a market for TOKEN_A/TOKEN_B via CLI"
@@ -42,7 +43,6 @@ help:
 	@echo "make mint TO=0x...                 # mint both tokens to TO"
 	@echo "make add-account                   # create CLI wallet, fund ETH, mint both tokens, persist wallet address"
 	@echo "make testnet                        # full local testnet flow using a newly created CLI wallet"
-	@echo "make testnet-auto                   # starts anvil in background (if needed), then runs full flow"
 	@echo "make stop                          # stop background anvil started by Makefile"
 	@echo "make terminate                     # stop anvil and remove local anvil env/state for a clean start"
 	@echo "make show-state                    # print persisted .anvil.env values"
@@ -56,7 +56,7 @@ check-rpc: check-tools
 	@cast chain-id --rpc-url "$(ANVIL_RPC_URL)" >/dev/null 2>&1 || { \
 		echo "RPC not reachable at $(ANVIL_RPC_URL)"; \
 		echo "Start Anvil first with: make anvil"; \
-		echo "Or use: make testnet-auto"; \
+		echo "Or run the full setup flow with: make testnet"; \
 		exit 1; \
 	}
 
@@ -106,12 +106,15 @@ build-cli:
 	@cd $(CLI_DIR) && go build -o ../$(CLI_BIN) .
 	@echo "Built CLI: $(CLI_BIN)"
 
+build_cli: build-cli
+
 build-forge: check-tools
+	@forge clean
 	@forge build
 
 deploy: check-tools ensure-anvil build-forge init-state
 	@set -eu; \
-	deploy_output="$$(forge create OrderBook.sol:OrderBook $(FORGE_CREATE_FLAGS) --rpc-url "$(ANVIL_RPC_URL)" --private-key "$(ANVIL_PRIVATE_KEY)" 2>&1)"; \
+	deploy_output="$$(forge create ./OrderBook.sol:OrderBook $(FORGE_CREATE_FLAGS) --rpc-url "$(ANVIL_RPC_URL)" --private-key "$(ANVIL_PRIVATE_KEY)" 2>&1)" || { printf '%s\n' "$$deploy_output"; exit 1; }; \
 	echo "$$deploy_output"; \
 	orderbook_address="$$(printf '%s\n' "$$deploy_output" | awk '/Deployed to:|Contract Address:/ {print $$NF}' | tail -n1)"; \
 	if [ -z "$$orderbook_address" ]; then \

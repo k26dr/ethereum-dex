@@ -27,7 +27,6 @@ import (
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/crypto"
 )
 
 const (
@@ -36,12 +35,10 @@ const (
 )
 
 type Order struct {
-	User          common.Address
-	BaseQuantity  *big.Int
-	QuoteQuantity *big.Int
-	BaseToken     common.Address
-	QuoteToken    common.Address
-	Side          uint8
+	User         common.Address
+	BaseQuantity *big.Int
+	Price        *big.Int
+	Side         uint8
 }
 
 type OrderBookService struct {
@@ -91,8 +88,7 @@ func (s *OrderBookService) FetchBank(ctx context.Context, baseToken common.Addre
 		return common.Address{}, false, fmt.Errorf("order book service is not initialized")
 	}
 
-	bankHash := marketBankHash(baseToken, quoteToken)
-	bankAddress, err := s.contract.Banks(&bind.CallOpts{Context: ctx}, bankHash)
+	bankAddress, err := s.contract.GetBankAddress(&bind.CallOpts{Context: ctx}, baseToken, quoteToken)
 	if err != nil {
 		return common.Address{}, false, err
 	}
@@ -108,7 +104,7 @@ func (s *OrderBookService) FetchOrderCounter(ctx context.Context) (*big.Int, err
 	return s.contract.OrderCounter(&bind.CallOpts{Context: ctx})
 }
 
-func (s *OrderBookService) FetchOrder(ctx context.Context, orderID *big.Int) (*Order, error) {
+func (s *OrderBookService) FetchOrder(ctx context.Context, baseToken common.Address, quoteToken common.Address, orderID *big.Int) (*Order, error) {
 	if s == nil || s.contract == nil {
 		return nil, fmt.Errorf("order book service is not initialized")
 	}
@@ -116,18 +112,16 @@ func (s *OrderBookService) FetchOrder(ctx context.Context, orderID *big.Int) (*O
 		return nil, err
 	}
 
-	order, err := s.contract.Orders(&bind.CallOpts{Context: ctx}, orderID)
+	order, err := s.contract.Getorder(&bind.CallOpts{Context: ctx}, baseToken, quoteToken, orderID)
 	if err != nil {
 		return nil, err
 	}
 
 	return &Order{
-		User:          order.User,
-		BaseQuantity:  order.BaseQuantity,
-		QuoteQuantity: order.QuoteQuantity,
-		BaseToken:     order.BaseToken,
-		QuoteToken:    order.QuoteToken,
-		Side:          order.Side,
+		User:         order.User,
+		BaseQuantity: order.BaseQuantity,
+		Price:        order.Price,
+		Side:         order.Side,
 	}, nil
 }
 
@@ -144,7 +138,7 @@ func (s *OrderBookService) CreateMarket(ctx context.Context, baseToken common.Ad
 	return s.contract.CreateMarket(opts, baseToken, quoteToken)
 }
 
-func (s *OrderBookService) PlaceOrder(ctx context.Context, baseToken common.Address, quoteToken common.Address, side uint8, baseQuantity *big.Int, quoteQuantity *big.Int, value *big.Int) (*types.Transaction, error) {
+func (s *OrderBookService) PlaceOrder(ctx context.Context, baseToken common.Address, quoteToken common.Address, side uint8, baseQuantity *big.Int, price *big.Int, value *big.Int) (*types.Transaction, error) {
 	if s == nil || s.contract == nil {
 		return nil, fmt.Errorf("order book service is not initialized")
 	}
@@ -154,7 +148,7 @@ func (s *OrderBookService) PlaceOrder(ctx context.Context, baseToken common.Addr
 	if err := requirePositive(baseQuantity, "base quantity"); err != nil {
 		return nil, err
 	}
-	if err := requirePositive(quoteQuantity, "quote quantity"); err != nil {
+	if err := requirePositive(price, "price"); err != nil {
 		return nil, err
 	}
 
@@ -168,10 +162,10 @@ func (s *OrderBookService) PlaceOrder(ctx context.Context, baseToken common.Addr
 		return nil, err
 	}
 
-	return s.contract.PlaceOrder(opts, baseToken, quoteToken, side, baseQuantity, quoteQuantity)
+	return s.contract.PlaceOrder(opts, baseToken, quoteToken, side, baseQuantity, price)
 }
 
-func (s *OrderBookService) CancelOrder(ctx context.Context, orderID *big.Int) (*types.Transaction, error) {
+func (s *OrderBookService) CancelOrder(ctx context.Context, baseToken common.Address, quoteToken common.Address, orderID *big.Int) (*types.Transaction, error) {
 	if s == nil || s.contract == nil {
 		return nil, fmt.Errorf("order book service is not initialized")
 	}
@@ -184,10 +178,10 @@ func (s *OrderBookService) CancelOrder(ctx context.Context, orderID *big.Int) (*
 		return nil, err
 	}
 
-	return s.contract.CancelOrder(opts, orderID)
+	return s.contract.CancelOrder(opts, baseToken, quoteToken, orderID)
 }
 
-func (s *OrderBookService) FillOrder(ctx context.Context, orderID *big.Int, baseQuantity *big.Int, value *big.Int) (*types.Transaction, error) {
+func (s *OrderBookService) FillOrder(ctx context.Context, orderID *big.Int, baseToken common.Address, quoteToken common.Address, baseQuantity *big.Int, value *big.Int) (*types.Transaction, error) {
 	if s == nil || s.contract == nil {
 		return nil, fmt.Errorf("order book service is not initialized")
 	}
@@ -208,7 +202,7 @@ func (s *OrderBookService) FillOrder(ctx context.Context, orderID *big.Int, base
 		return nil, err
 	}
 
-	return s.contract.FillOrder(opts, orderID, baseQuantity)
+	return s.contract.FillOrder(opts, orderID, baseToken, quoteToken, baseQuantity)
 }
 
 func (s *OrderBookService) transactOpts(ctx context.Context, value *big.Int) (*bind.TransactOpts, error) {
@@ -253,7 +247,3 @@ func requireNonNegativeOrZero(value *big.Int, fieldName string) (*big.Int, error
 	return value, nil
 }
 
-func marketBankHash(baseToken common.Address, quoteToken common.Address) [32]byte {
-	hash := crypto.Keccak256Hash(baseToken.Bytes(), quoteToken.Bytes())
-	return [32]byte(hash)
-}

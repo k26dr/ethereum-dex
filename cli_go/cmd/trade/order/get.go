@@ -17,25 +17,30 @@ import (
 	"dex/internal/amount"
 	"dex/service"
 
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/spf13/cobra"
 )
 
 type getIn struct {
 	contractAddress string
+	baseToken       common.Address
+	quoteToken      common.Address
 	orderID         *big.Int
 }
 
 type getOut struct {
-	user                 string
-	baseToken            string
-	quoteToken           string
-	baseSymbol           string
-	quoteSymbol          string
-	side                 string
-	baseQuantityRaw      string
-	baseQuantityDisplay  string
-	quoteQuantityRaw     string
-	quoteQuantityDisplay string
+	status              string
+	active              bool
+	user                string
+	baseToken           string
+	quoteToken          string
+	baseSymbol          string
+	quoteSymbol         string
+	side                string
+	baseQuantityRaw     string
+	baseQuantityDisplay string
+	priceRaw            string
+	priceDisplay        string
 }
 
 func newGetCommand(cfg *service.Service) *cobra.Command {
@@ -57,6 +62,8 @@ func newGetCommand(cfg *service.Service) *cobra.Command {
 	}
 
 	cmd.Flags().String("contract", "", "OrderBook contract address (defaults to config.contract.address)")
+	cmd.Flags().String("base", "", "Base token address or symbol")
+	cmd.Flags().String("quote", "", "Quote token address or symbol")
 	cmd.Flags().String("id", "", "Order id")
 	return cmd
 }
@@ -79,11 +86,19 @@ func inputGet(cmd *cobra.Command, cfg *service.Service) (*getIn, error) {
 	if err != nil {
 		return nil, err
 	}
+	baseToken, err := orderReadTokenAddressFlag(cmd, cfg, "base", "Base token (symbol or address)")
+	if err != nil {
+		return nil, err
+	}
+	quoteToken, err := orderReadTokenAddressFlag(cmd, cfg, "quote", "Quote token (symbol or address)")
+	if err != nil {
+		return nil, err
+	}
 	orderID, err := orderReadBigIntFlag(cmd, "id", "Order id", true)
 	if err != nil {
 		return nil, err
 	}
-	return &getIn{contractAddress: contractAddress, orderID: orderID}, nil
+	return &getIn{contractAddress: contractAddress, baseToken: baseToken, quoteToken: quoteToken, orderID: orderID}, nil
 }
 
 func processGet(in *getIn, cfg *service.Service) (*getOut, error) {
@@ -99,13 +114,18 @@ func processGet(in *getIn, cfg *service.Service) (*getOut, error) {
 	}
 
 	ctx := context.Background()
-	orderValue, err := orderbookService.FetchOrder(ctx, in.orderID)
+	orderValue, err := orderbookService.FetchOrder(ctx, in.baseToken, in.quoteToken, in.orderID)
 	if err != nil {
 		return nil, err
 	}
 
 	side := "unknown"
-	if orderValue.Side == service.OrderSideBuy {
+	active := orderValue.User != (common.Address{}) && orderValue.BaseQuantity != nil && orderValue.BaseQuantity.Sign() > 0
+	status := "active"
+	if !active {
+		status = "inactive (order not found, canceled, or fully filled)"
+		side = "n/a"
+	} else if orderValue.Side == service.OrderSideBuy {
 		side = "buy"
 	} else if orderValue.Side == service.OrderSideSell {
 		side = "sell"
@@ -113,7 +133,7 @@ func processGet(in *getIn, cfg *service.Service) (*getOut, error) {
 
 	baseDecimals := uint8(18)
 	baseSymbol := ""
-	if meta, err := cfg.ResolveTokenMetadata(ctx, rpcService, cfg.Get().Network.ChainID, orderValue.BaseToken); err == nil {
+	if meta, err := cfg.ResolveTokenMetadata(ctx, rpcService, cfg.Get().Network.ChainID, in.baseToken); err == nil {
 		if meta.Decimals > 0 {
 			baseDecimals = meta.Decimals
 		}
@@ -121,7 +141,7 @@ func processGet(in *getIn, cfg *service.Service) (*getOut, error) {
 	}
 	quoteDecimals := uint8(18)
 	quoteSymbol := ""
-	if meta, err := cfg.ResolveTokenMetadata(ctx, rpcService, cfg.Get().Network.ChainID, orderValue.QuoteToken); err == nil {
+	if meta, err := cfg.ResolveTokenMetadata(ctx, rpcService, cfg.Get().Network.ChainID, in.quoteToken); err == nil {
 		if meta.Decimals > 0 {
 			quoteDecimals = meta.Decimals
 		}
@@ -129,20 +149,27 @@ func processGet(in *getIn, cfg *service.Service) (*getOut, error) {
 	}
 
 	return &getOut{
-		user:                 orderValue.User.Hex(),
-		baseToken:            service.FormatTokenRef(baseSymbol, orderValue.BaseToken.Hex()),
-		quoteToken:           service.FormatTokenRef(quoteSymbol, orderValue.QuoteToken.Hex()),
-		baseSymbol:           baseSymbol,
-		quoteSymbol:          quoteSymbol,
-		side:                 side,
-		baseQuantityRaw:      orderValue.BaseQuantity.String(),
-		baseQuantityDisplay:  amount.FormatUnits(orderValue.BaseQuantity, baseDecimals),
-		quoteQuantityRaw:     orderValue.QuoteQuantity.String(),
-		quoteQuantityDisplay: amount.FormatUnits(orderValue.QuoteQuantity, quoteDecimals),
+		status:              status,
+		active:              active,
+		user:                orderValue.User.Hex(),
+		baseToken:           service.FormatTokenRef(baseSymbol, in.baseToken.Hex()),
+		quoteToken:          service.FormatTokenRef(quoteSymbol, in.quoteToken.Hex()),
+		baseSymbol:          baseSymbol,
+		quoteSymbol:         quoteSymbol,
+		side:                side,
+		baseQuantityRaw:     orderValue.BaseQuantity.String(),
+		baseQuantityDisplay: amount.FormatUnits(orderValue.BaseQuantity, baseDecimals),
+		priceRaw:            orderValue.Price.String(),
+		priceDisplay:        amount.FormatUnits(orderValue.Price, quoteDecimals),
 	}, nil
 }
 
 func outputGet(cmd *cobra.Command, out *getOut) error {
+	if !out.active {
+		fmt.Fprintf(cmd.OutOrStdout(), "Status: %s\n", out.status)
+		return nil
+	}
+
 	sideDetail := ""
 	if out.side == "sell" && out.quoteSymbol != "" && out.baseSymbol != "" {
 		sideDetail = fmt.Sprintf(" (%s -> %s)", out.quoteSymbol, out.baseSymbol)
@@ -150,11 +177,12 @@ func outputGet(cmd *cobra.Command, out *getOut) error {
 		sideDetail = fmt.Sprintf(" (%s -> %s)", out.baseSymbol, out.quoteSymbol)
 	}
 
+	fmt.Fprintf(cmd.OutOrStdout(), "Status: %s\n", out.status)
 	fmt.Fprintf(cmd.OutOrStdout(), "Maker: %s\n", out.user)
 	fmt.Fprintf(cmd.OutOrStdout(), "Base Token: %s\n", out.baseToken)
 	fmt.Fprintf(cmd.OutOrStdout(), "Quote Token: %s\n", out.quoteToken)
 	fmt.Fprintf(cmd.OutOrStdout(), "Side: %s%s\n", out.side, sideDetail)
 	fmt.Fprintf(cmd.OutOrStdout(), "Base Quantity: %s (raw: %s)\n", out.baseQuantityDisplay, out.baseQuantityRaw)
-	fmt.Fprintf(cmd.OutOrStdout(), "Quote Quantity: %s (raw: %s)\n", out.quoteQuantityDisplay, out.quoteQuantityRaw)
+	fmt.Fprintf(cmd.OutOrStdout(), "Price: %s (raw: %s)\n", out.priceDisplay, out.priceRaw)
 	return nil
 }

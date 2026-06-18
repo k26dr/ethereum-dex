@@ -27,6 +27,8 @@ import (
 type fillIn struct {
 	contractAddress string
 	walletAddress   string
+	baseToken       common.Address
+	quoteToken      common.Address
 	orderID         *big.Int
 	baseQuantityRaw string
 	valueRaw        string
@@ -49,9 +51,12 @@ func newFillCommand(cfg *service.Service, ks *service.Keystore) *cobra.Command {
 
 	cmd.Flags().String("contract", "", "OrderBook contract address (defaults to config.contract.address)")
 	cmd.Flags().String("wallet", "", "Wallet address to sign with")
+	cmd.Flags().String("base", "", "Base token address or symbol")
+	cmd.Flags().String("quote", "", "Quote token address or symbol")
 	cmd.Flags().String("id", "", "Order id")
 	cmd.Flags().String("base-qty", "", "Fill base quantity (decimal token units, e.g. 1.5)")
 	cmd.Flags().String("value-wei", "", "Native value (decimal ETH units, optional, e.g. 0.1)")
+	cmd.Flags().BoolP("yes", "y", false, "Skip confirmation prompts")
 	return cmd
 }
 
@@ -78,6 +83,14 @@ func inputFill(cmd *cobra.Command, cfg *service.Service, ks *service.Keystore) (
 	if err != nil {
 		return nil, err
 	}
+	baseToken, err := orderReadTokenAddressFlag(cmd, cfg, "base", "Base token (symbol or address)")
+	if err != nil {
+		return nil, err
+	}
+	quoteToken, err := orderReadTokenAddressFlag(cmd, cfg, "quote", "Quote token (symbol or address)")
+	if err != nil {
+		return nil, err
+	}
 	orderID, err := orderReadBigIntFlag(cmd, "id", "Order id", true)
 	if err != nil {
 		return nil, err
@@ -92,6 +105,8 @@ func inputFill(cmd *cobra.Command, cfg *service.Service, ks *service.Keystore) (
 	return &fillIn{
 		contractAddress: contractAddress,
 		walletAddress:   walletAddress,
+		baseToken:       baseToken,
+		quoteToken:      quoteToken,
 		orderID:         orderID,
 		baseQuantityRaw: baseQuantityRaw,
 		valueRaw:        valueRaw,
@@ -112,42 +127,43 @@ func processFill(cmd *cobra.Command, in *fillIn, cfg *service.Service, ks *servi
 
 	ctx := context.Background()
 	var walletForFillTx *service.Wallet
-	orderValue, err := orderbookReadService.FetchOrder(ctx, in.orderID)
+	orderValue, err := orderbookReadService.FetchOrder(ctx, in.baseToken, in.quoteToken, in.orderID)
 	if err != nil {
 		return nil, err
 	}
 	if fillOrderUnavailable(orderValue) {
 		return nil, fmt.Errorf("order %s is already filled completely (or no longer exists)", in.orderID.String())
 	}
-	bankAddress, _, err := orderbookReadService.FetchBank(ctx, orderValue.BaseToken, orderValue.QuoteToken)
+	bankAddress, _, err := orderbookReadService.FetchBank(ctx, in.baseToken, in.quoteToken)
 	if err != nil {
 		return nil, err
 	}
 
-	baseMeta, err := cfg.ResolveTokenMetadata(ctx, rpcService, cfg.Get().Network.ChainID, orderValue.BaseToken)
+	baseMeta, err := cfg.ResolveTokenMetadata(ctx, rpcService, cfg.Get().Network.ChainID, in.baseToken)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read base token decimals: %w", err)
 	}
-	quoteMeta, err := cfg.ResolveTokenMetadata(ctx, rpcService, cfg.Get().Network.ChainID, orderValue.QuoteToken)
+	quoteMeta, err := cfg.ResolveTokenMetadata(ctx, rpcService, cfg.Get().Network.ChainID, in.quoteToken)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read quote token decimals: %w", err)
 	}
 
-	baseSymbol := fillTokenSymbolOrAddress(baseMeta.Symbol, orderValue.BaseToken)
-	quoteSymbol := fillTokenSymbolOrAddress(quoteMeta.Symbol, orderValue.QuoteToken)
+	baseSymbol := fillTokenSymbolOrAddress(baseMeta.Symbol, in.baseToken)
+	quoteSymbol := fillTokenSymbolOrAddress(quoteMeta.Symbol, in.quoteToken)
 
-	takerAction := "Buying " + baseSymbol + " with " + quoteSymbol
-	paymentToken := orderValue.BaseToken
-	paymentSymbol := baseSymbol
-	paymentDecimals := baseMeta.Decimals
-	if orderValue.Side == service.OrderSideSell {
+	var takerAction string
+	var paymentToken common.Address
+	var paymentSymbol string
+	var paymentDecimals uint8
+	switch orderValue.Side {
+	case service.OrderSideSell:
 		takerAction = "Buying " + baseSymbol + " with " + quoteSymbol
-		paymentToken = orderValue.QuoteToken
+		paymentToken = in.quoteToken
 		paymentSymbol = quoteSymbol
 		paymentDecimals = quoteMeta.Decimals
-	} else if orderValue.Side == service.OrderSideBuy {
+	case service.OrderSideBuy:
 		takerAction = "Selling " + baseSymbol + " for " + quoteSymbol
-		paymentToken = orderValue.BaseToken
+		paymentToken = in.baseToken
 		paymentSymbol = baseSymbol
 		paymentDecimals = baseMeta.Decimals
 	}
@@ -172,19 +188,21 @@ func processFill(cmd *cobra.Command, in *fillIn, cfg *service.Service, ks *servi
 		allowanceDisplay = fillFormatHuman(allowance, paymentDecimals) + " " + paymentSymbol
 	}
 
+	orderQuoteQuantity := fillDeriveQuoteQuantity(orderValue.BaseQuantity, orderValue.Price, quoteMeta.Decimals)
+
 	maxByOrder := new(big.Int).Set(orderValue.BaseQuantity)
-	maxByBalance := fillMaxBaseFromPayment(orderValue.Side, paymentBalance, orderValue.BaseQuantity, orderValue.QuoteQuantity)
+	maxByBalance := fillMaxBaseFromPayment(orderValue.Side, paymentBalance, orderValue.BaseQuantity, orderQuoteQuantity)
 	maxFill := fillMinBigInt(maxByOrder, maxByBalance)
 	if paymentToken != (common.Address{}) {
-		maxByAllowance := fillMaxBaseFromPayment(orderValue.Side, allowance, orderValue.BaseQuantity, orderValue.QuoteQuantity)
+		maxByAllowance := fillMaxBaseFromPayment(orderValue.Side, allowance, orderValue.BaseQuantity, orderQuoteQuantity)
 		maxFill = fillMinBigInt(maxFill, maxByAllowance)
 	}
-	requiredForFullFill := fillQuoteForBase(orderValue.BaseQuantity, orderValue.BaseQuantity, orderValue.QuoteQuantity)
+	requiredForFullFill := fillQuoteForBase(orderValue.BaseQuantity, orderValue.BaseQuantity, orderQuoteQuantity)
 	if orderValue.Side == service.OrderSideBuy {
 		requiredForFullFill = new(big.Int).Set(orderValue.BaseQuantity)
 	}
 
-	limitPrice := fillLimitPrice(orderValue.QuoteQuantity, quoteMeta.Decimals, orderValue.BaseQuantity, baseMeta.Decimals)
+	limitPrice := fillLimitPrice(orderValue.Price, quoteMeta.Decimals, orderValue.BaseQuantity, baseMeta.Decimals)
 
 	fmt.Fprintf(cmd.OutOrStdout(), "Order ID: %s\n\n", in.orderID.String())
 	fmt.Fprintln(cmd.OutOrStdout(), "Order details")
@@ -192,7 +210,7 @@ func processFill(cmd *cobra.Command, in *fillIn, cfg *service.Service, ks *servi
 	fmt.Fprintf(cmd.OutOrStdout(), "  Maker side:  %s\n", fillTitle(fillMakerSide(orderValue.Side)))
 	fmt.Fprintf(cmd.OutOrStdout(), "  Available:   %s %s\n", fillFormatHuman(orderValue.BaseQuantity, baseMeta.Decimals), baseSymbol)
 	fmt.Fprintf(cmd.OutOrStdout(), "  Limit price: %s %s per %s\n", limitPrice, quoteSymbol, baseSymbol)
-	fmt.Fprintf(cmd.OutOrStdout(), "  Total quote: %s %s\n\n", fillFormatHuman(orderValue.QuoteQuantity, quoteMeta.Decimals), quoteSymbol)
+	fmt.Fprintf(cmd.OutOrStdout(), "  Total quote: %s %s\n\n", fillFormatHuman(orderQuoteQuantity, quoteMeta.Decimals), quoteSymbol)
 
 	fmt.Fprintln(cmd.OutOrStdout(), "Your fill")
 	fmt.Fprintf(cmd.OutOrStdout(), "  You are:     %s\n", takerAction)
@@ -210,12 +228,15 @@ func processFill(cmd *cobra.Command, in *fillIn, cfg *service.Service, ks *servi
 			return nil, fmt.Errorf("max fill is zero (wallet %s balance is zero)", paymentSymbol)
 		}
 
-		ok, err := prompt.Confirm("Max fill is currently zero due to allowance. Set allowance now (this sends a separate approve transaction)")
-		if err != nil {
-			return nil, err
-		}
-		if !ok {
-			return nil, fmt.Errorf("aborted")
+		yes, _ := cmd.Flags().GetBool("yes")
+		if !yes {
+			ok, err := prompt.Confirm("Max fill is currently zero due to allowance. Set allowance now (this sends a separate approve transaction)")
+			if err != nil {
+				return nil, err
+			}
+			if !ok {
+				return nil, fmt.Errorf("aborted")
+			}
 		}
 
 		approveAmount, err := prompt.SelectAllowanceAmount(requiredForFullFill, paymentBalance, paymentDecimals)
@@ -223,7 +244,7 @@ func processFill(cmd *cobra.Command, in *fillIn, cfg *service.Service, ks *servi
 			return nil, err
 		}
 
-		fmt.Fprintln(cmd.OutOrStdout(), "\nReview allowance\n")
+		fmt.Fprintln(cmd.OutOrStdout(), "\nReview allowance")
 		fmt.Fprintf(cmd.OutOrStdout(), "  Token:       %s\n", paymentSymbol)
 		fmt.Fprintf(cmd.OutOrStdout(), "  Amount:      %s %s\n", fillFormatHuman(approveAmount, paymentDecimals), paymentSymbol)
 		fmt.Fprintf(cmd.OutOrStdout(), "  Spender:     %s\n\n", fillShortAddress(in.contractAddress))
@@ -264,7 +285,7 @@ func processFill(cmd *cobra.Command, in *fillIn, cfg *service.Service, ks *servi
 			return nil, err
 		}
 		allowanceDisplay = fillFormatHuman(allowance, paymentDecimals) + " " + paymentSymbol
-		maxByAllowance := fillMaxBaseFromPayment(orderValue.Side, allowance, orderValue.BaseQuantity, orderValue.QuoteQuantity)
+		maxByAllowance := fillMaxBaseFromPayment(orderValue.Side, allowance, orderValue.BaseQuantity, orderQuoteQuantity)
 		maxFill = fillMinBigInt(maxByOrder, fillMinBigInt(maxByBalance, maxByAllowance))
 		fmt.Fprintf(cmd.OutOrStdout(), "Updated allowance: %s\n", allowanceDisplay)
 		fmt.Fprintf(cmd.OutOrStdout(), "Updated max fill:  %s %s\n\n", fillFormatHuman(maxFill, baseMeta.Decimals), baseSymbol)
@@ -306,14 +327,14 @@ func processFill(cmd *cobra.Command, in *fillIn, cfg *service.Service, ks *servi
 	}
 
 	// Final pre-send refresh: order can change between prompt and submission.
-	latestOrder, err := orderbookReadService.FetchOrder(ctx, in.orderID)
+	latestOrder, err := orderbookReadService.FetchOrder(ctx, in.baseToken, in.quoteToken, in.orderID)
 	if err != nil {
 		return nil, err
 	}
 	if latestOrder.User == (common.Address{}) || latestOrder.BaseQuantity == nil || latestOrder.BaseQuantity.Sign() <= 0 {
 		return nil, fmt.Errorf("order %s is already filled or no longer available", in.orderID.String())
 	}
-	if latestOrder.BaseToken != orderValue.BaseToken || latestOrder.QuoteToken != orderValue.QuoteToken || latestOrder.Side != orderValue.Side {
+	if latestOrder.Side != orderValue.Side {
 		return nil, fmt.Errorf("order %s changed unexpectedly; please retry", in.orderID.String())
 	}
 	if baseQuantity.Cmp(latestOrder.BaseQuantity) > 0 {
@@ -327,12 +348,13 @@ func processFill(cmd *cobra.Command, in *fillIn, cfg *service.Service, ks *servi
 		)
 	}
 
-	fillQuote := fillQuoteForBase(baseQuantity, latestOrder.BaseQuantity, latestOrder.QuoteQuantity)
+	latestQuoteQuantity := fillDeriveQuoteQuantity(latestOrder.BaseQuantity, latestOrder.Price, quoteMeta.Decimals)
+	fillQuote := fillQuoteForBase(baseQuantity, latestOrder.BaseQuantity, latestQuoteQuantity)
 	requiredPayment := fillQuote
 	if latestOrder.Side == service.OrderSideBuy {
 		requiredPayment = new(big.Int).Set(baseQuantity)
 	}
-	latestLimitPrice := fillLimitPrice(latestOrder.QuoteQuantity, quoteMeta.Decimals, latestOrder.BaseQuantity, baseMeta.Decimals)
+	latestLimitPrice := fillLimitPrice(latestOrder.Price, quoteMeta.Decimals, latestOrder.BaseQuantity, baseMeta.Decimals)
 
 	currentBalance, err := fillPaymentBalance(ctx, rpcService, cfg.Get().Network.ChainID, walletAddr, paymentToken)
 	if err != nil {
@@ -367,7 +389,7 @@ func processFill(cmd *cobra.Command, in *fillIn, cfg *service.Service, ks *servi
 		)
 	}
 
-	fmt.Fprintln(cmd.OutOrStdout(), "\nReview fill\n")
+	fmt.Fprintln(cmd.OutOrStdout(), "\nReview fill")
 	if latestOrder.Side == service.OrderSideSell {
 		fmt.Fprintf(cmd.OutOrStdout(), "  You buy:     %s %s\n", fillFormatHuman(baseQuantity, baseMeta.Decimals), baseSymbol)
 		fmt.Fprintf(cmd.OutOrStdout(), "  You pay:     %s %s\n", fillFormatHuman(requiredPayment, paymentDecimals), paymentSymbol)
@@ -405,12 +427,15 @@ func processFill(cmd *cobra.Command, in *fillIn, cfg *service.Service, ks *servi
 
 	var walletService *service.Wallet
 	if walletForFillTx != nil {
-		ok, err := prompt.Confirm("Wallet already unlocked from allowance step. Proceed with fill transaction")
-		if err != nil {
-			return nil, err
-		}
-		if !ok {
-			return nil, fmt.Errorf("aborted")
+		yes, _ := cmd.Flags().GetBool("yes")
+		if !yes {
+			ok, err := prompt.Confirm("Wallet already unlocked from allowance step. Proceed with fill transaction")
+			if err != nil {
+				return nil, err
+			}
+			if !ok {
+				return nil, fmt.Errorf("aborted")
+			}
 		}
 		walletService = walletForFillTx
 	} else {
@@ -431,7 +456,7 @@ func processFill(cmd *cobra.Command, in *fillIn, cfg *service.Service, ks *servi
 		return nil, err
 	}
 
-	tx, err := orderbookService.FillOrder(ctx, in.orderID, baseQuantity, value)
+	tx, err := orderbookService.FillOrder(ctx, in.orderID, in.baseToken, in.quoteToken, baseQuantity, value)
 	if err != nil {
 		return nil, err
 	}
@@ -629,6 +654,15 @@ func fillPreparePasswordForWalletPrompt() (func(), error) {
 func maxUint256() *big.Int {
 	max := new(big.Int).Lsh(big.NewInt(1), 256)
 	return max.Sub(max, big.NewInt(1))
+}
+
+func fillDeriveQuoteQuantity(baseQuantity *big.Int, price *big.Int, quoteDecimals uint8) *big.Int {
+	if baseQuantity == nil || price == nil {
+		return big.NewInt(0)
+	}
+	exp := new(big.Int).Exp(big.NewInt(10), big.NewInt(int64(quoteDecimals)), nil)
+	q := new(big.Int).Mul(baseQuantity, price)
+	return q.Div(q, exp)
 }
 
 func fillOrderUnavailable(orderValue *service.Order) bool {
