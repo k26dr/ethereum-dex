@@ -65,14 +65,14 @@ contract MatchingOrderBook {
 	event OrderPlaced(uint indexed orderId, address indexed user, address baseToken, address quoteToken, bytes32 indexed markethash, Side side, uint baseQuantity, uint price);
 	event OrderCanceled(uint indexed orderId);
 	event OrderFill(uint indexed orderId, uint baseQuantity);
-	event MarketCreated(address indexed baseToken, address indexed quoteToken, uint baseMinimum, uint quoteMinimum, address bankAddress);
+	event MarketCreated(bytes32 marketId, address indexed baseToken, address indexed quoteToken, uint baseMinimum, uint quoteMinimum, address bankAddress);
 
 	function createMarket(address baseToken, address quoteToken, uint baseMinimum, uint quoteMinimum) external {
 		bytes32 marketId = getMarketId(baseToken, quoteToken, baseMinimum, quoteMinimum);
 		require(MARKET_DETAILS[marketId].bankAddress == address(0), "market has already been created");
 		address payable bankAddress = payable(address(new Bank(address(this))));
 		MARKET_DETAILS[marketId] = MarketDetails(baseToken, quoteToken, baseMinimum, quoteMinimum, bankAddress);
-		emit MarketCreated(baseToken, quoteToken, baseMinimum, quoteMinimum, bankAddress);
+		emit MarketCreated(marketId, baseToken, quoteToken, baseMinimum, quoteMinimum, bankAddress);
 	}
 
 	function placeOrder(bytes32 marketId, Side side, uint baseQuantity, uint price) external payable returns (uint128 orderId) {
