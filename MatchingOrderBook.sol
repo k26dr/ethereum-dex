@@ -201,7 +201,7 @@ contract MatchingOrderBook {
 		{
 			uint128 nextOrderId = orderbooks[marketId][side];
 			uint128 previousOrderId = 0;
-			if (nextOrderId == 0) {
+			if (nextOrderId == 0) { //  if the orderbook is empty
 				orderbooks[marketId][side] = orderId;
 			}
 			else {
@@ -210,9 +210,14 @@ contract MatchingOrderBook {
 					previousOrderId = nextOrderId;
 					nextOrderId = orders[marketId][side][nextOrderId].nextOrderId;
 				}
-				orders[marketId][side][previousOrderId].nextOrderId = orderId;
+				if (nextOrderId != 0) {
+					orders[marketId][side][nextOrderId].previousOrderId = orderId;
+				}
 				if (previousOrderId == 0) {
 					orderbooks[marketId][side] = orderId;
+				}
+				else {
+					orders[marketId][side][previousOrderId].nextOrderId = orderId;
 				}
 			}
 			orders[marketId][side][orderId] = Order(msg.sender, baseQuantity, price, nextOrderId, previousOrderId);
