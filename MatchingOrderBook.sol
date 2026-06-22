@@ -60,7 +60,7 @@ contract MatchingOrderBook {
 	mapping(bytes32 => MarketDetails) public MARKET_DETAILS; // market_id -> MarketDetails
 	mapping(bytes32 => mapping(Side => uint128)) orderbooks; // marketId -> Side -> firstOrderId
 	mapping(bytes32 => mapping(Side => mapping(uint128 => Order))) orders; // marketId -> Side -> orderId -> Order
-	uint128 public orderCounter = 1;
+	uint128 public orderCounter = 0; // order counter increments before being saved so the first order ID saved will be 1
 
 	event OrderPlaced(uint indexed orderId, address indexed user, address baseToken, address quoteToken, bytes32 indexed markethash, Side side, uint baseQuantity, uint price);
 	event OrderCanceled(uint indexed orderId);
@@ -205,8 +205,8 @@ contract MatchingOrderBook {
 				orderbooks[marketId][side] = orderId;
 			}
 			else {
-				while ((side == Side.SELL && nextOrderId != 0 && orders[marketId][side][nextOrderId].price <= price) || 
-				       (side == Side.BUY && nextOrderId != 0 && orders[marketId][side][nextOrderId].price >= price)) {
+				while ((side == Side.SELL && nextOrderId != 0 && price >= orders[marketId][side][nextOrderId].price) || 
+				       (side == Side.BUY && nextOrderId != 0 && price <= orders[marketId][side][nextOrderId].price)) {
 					previousOrderId = nextOrderId;
 					nextOrderId = orders[marketId][side][nextOrderId].nextOrderId;
 				}

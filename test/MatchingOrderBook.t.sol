@@ -124,10 +124,10 @@ contract MatchingOrderBookTest is Test {
 			orderBook.placeOrder(marketId, MatchingOrderBook.Side.SELL, 115e6, i * 1e6);
 		}
 		MatchingOrderBook.Order[] memory orders = orderBook.getOrderBook(marketId, MatchingOrderBook.Side.SELL, 99);
-		assertEq(orders[0].previousOrderId, 0, "order pointers are wrong");
-		assertEq(orders[0].nextOrderId, 3, "order pointers are wrong");
-		assertEq(orders[33].previousOrderId, 34, "order pointers are wrong");
-		assertEq(orders[33].nextOrderId, 36, "order pointers are wrong");
+		assertEq(orders[0].previousOrderId, 0, "there should be no previousOrderId");
+		assertEq(orders[0].nextOrderId, 2, "order pointers are wrong");
+		assertEq(orders[33].previousOrderId, 33, "order pointers are wrong");
+		assertEq(orders[33].nextOrderId, 35, "order pointers are wrong");
 	}
 
 	function testPlace100SellOrders() public {
@@ -140,21 +140,32 @@ contract MatchingOrderBookTest is Test {
 			vm.prank(user1);
 			orderBook.placeOrder(marketId, MatchingOrderBook.Side.SELL, 115e6, i * 1e6);
 		}
+		MatchingOrderBook.Order[] memory orders = orderBook.getOrderBook(marketId, MatchingOrderBook.Side.SELL, 99);
+		assertEq(orders[0].previousOrderId, 0, "there should be no previousOrderId");
+		assertEq(orders[0].nextOrderId, 2, "order pointers are wrong");
+		assertEq(orders[33].previousOrderId, 33, "order pointers are wrong");
+		assertEq(orders[33].nextOrderId, 35, "order pointers are wrong");
+		assertEq(orders[55].previousOrderId, 55, "order pointers are wrong");
+		assertEq(orders[55].nextOrderId, 57, "order pointers are wrong");
 	}
 
-	function testPlace99BuyOrders() public {
+	function testPlace100BuyOrders() public {
 		orderBook.createMarket(address(EURT), address(USDC), 0, 10e6);
 		vm.prank(user1);
 		USDC.approve(address(orderBook), 100e18);
 		USDC.mint(user1, 1000*1e18);
 		bytes32 marketId = orderBook.getMarketId(address(EURT), address(USDC), 0, 10e6);
-		for (uint i=1; i < 100; i++) {
+		for (uint i=1; i < 101; i++) {
 			vm.prank(user1);
 			orderBook.placeOrder(marketId, MatchingOrderBook.Side.BUY, 115e6, i * 1e6);
 		}
-		MatchingOrderBook.Order[] memory orders = orderBook.getOrderBook(marketId, MatchingOrderBook.Side.SELL, 99);
-		assertNotEq(orders[33].previousOrderId, 0, "previousOrderId pointer is wrong");
-		assertNotEq(orders[33].nextOrderId, 0, "nextOrderId pointer is wrong");
+		MatchingOrderBook.Order[] memory orders = orderBook.getOrderBook(marketId, MatchingOrderBook.Side.BUY, 100);
+		assertEq(orders[0].previousOrderId, 0, "previousOrderId pointer is wrong");
+		assertEq(orders[0].nextOrderId, 99, "nextOrderId pointer is wrong");
+		assertEq(orders[33].previousOrderId, 68, "previousOrderId pointer is wrong");
+		assertEq(orders[33].nextOrderId, 66, "nextOrderId pointer is wrong");
+		assertEq(orders[99].previousOrderId, 2, "previousOrderId pointer is wrong");
+		assertEq(orders[99].nextOrderId, 0, "nextOrderId pointer is wrong");
 	}
 
 	//function testPlace999SellOrders() public {
@@ -287,6 +298,7 @@ contract MatchingOrderBookTest is Test {
 		assertEq(orders[0].baseQuantity, 500e6);
 		assertEq(orders[0].price, 1e6);
 		assertEq(orders[0].nextOrderId, 0);
+		assertEq(orders[0].previousOrderId, 0);
 		assertEq(orders[1].user, address(0));
 		assertEq(orders[1].baseQuantity, 0);
 	}
@@ -331,10 +343,16 @@ contract MatchingOrderBookTest is Test {
 		MatchingOrderBook.Order[] memory orders = orderBook.getOrderBook(marketId, MatchingOrderBook.Side.SELL, 4);
 		assertEq(orders[0].baseQuantity, 1000e6);
 		assertEq(orders[0].price, 1e6);
+		assertEq(orders[0].previousOrderId, 0);
+		assertEq(orders[0].nextOrderId, 2);
 		assertEq(orders[1].baseQuantity, 1000e6);
 		assertEq(orders[1].price, 11e5);
+		assertEq(orders[1].previousOrderId, 1);
+		assertEq(orders[1].nextOrderId, 3);
 		assertEq(orders[2].baseQuantity, 1000e6);
 		assertEq(orders[2].price, 12e5);
+		assertEq(orders[2].previousOrderId, 2);
+		assertEq(orders[2].nextOrderId, 0);
 		assertEq(orders[3].baseQuantity, 0, "order 4 should be empty");
 		vm.prank(user2);
 		orderBook.placeOrder(marketId, MatchingOrderBook.Side.BUY, 3500e6, 12e5);
@@ -357,6 +375,7 @@ contract MatchingOrderBookTest is Test {
 		assertEq(orders[0].user, user2);
 		assertEq(orders[0].baseQuantity, 500e6);
 		assertEq(orders[0].price, 12e5);
+		assertEq(orders[0].previousOrderId, 0);
 		assertEq(orders[0].nextOrderId, 0);
 	}
 
@@ -420,6 +439,7 @@ contract MatchingOrderBookTest is Test {
 		assertEq(orders[0].baseQuantity, 500e6);
 		assertEq(orders[0].price, 12e5);
 		assertEq(orders[0].nextOrderId, 0);
+		assertEq(orders[0].previousOrderId, 0);
 	}
 
 	function testLotsOfOrders() public {
@@ -478,6 +498,8 @@ contract MatchingOrderBookTest is Test {
 		assertEq(order.user, address(0), "User should be deleted");
 		assertEq(order.baseQuantity, 0, "Base Quantity should be deleted");
 		assertEq(order.price, 0, "Price should be deleted");
+		assertEq(order.nextOrderId, 0, "NextOrderId should be deleted");
+		assertEq(order.previousOrderId, 0, "PreviousOrderId should be deleted");
 	}
 
 	function testDoubleCancelOrderFail() public {
