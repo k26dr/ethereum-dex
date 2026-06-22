@@ -75,7 +75,7 @@ contract MatchingOrderBook {
 		emit MarketCreated(marketId, baseToken, quoteToken, baseMinimum, quoteMinimum, bankAddress);
 	}
 
-	function placeOrder(bytes32 marketId, Side side, uint baseQuantity, uint price) external payable returns (uint128 orderId) {
+	function placeOrder(bytes32 marketId, Side side, uint baseQuantity, uint price) external returns (uint128 orderId) {
 		MarketDetails memory marketDetails = MARKET_DETAILS[marketId];
 		PlaceOrderVars memory placeOrderVars = PlaceOrderVars(false, 0, 0, Side.BUY, 0);
 		require(marketDetails.bankAddress != address(0), "createMarket before placing an order on it");
@@ -85,7 +85,6 @@ contract MatchingOrderBook {
 		require(decimalCallSuccess, "failed to get decimals for token");
 		placeOrderVars.quoteQuantity = baseQuantity * price / 10**quoteTokenDecimals;
 		require(placeOrderVars.quoteQuantity > 0, "calculated quote quantity is zero");
-		require(msg.value == 0, "Cannot send ETH. Use WETH instead.");
 
 		// This is to transfer tokens into the contract
 		// Support is included here for fee-for-transfer tokens which do not send the requested amount exactly.
