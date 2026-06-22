@@ -41,7 +41,7 @@ contract MatchingOrderBookTest is Test {
 		orderBook.createMarket(address(EURT), address(USDC), 0, 100e6);
 	}
 	
-	function testBankWithdrawToFail() public {
+	function testHackBankFailWithExternalAddress() public {
 		orderBook.createMarket(address(EURT), address(USDC), 0, 10e6);
 		bytes32 marketId = orderBook.getMarketId(address(EURT), address(USDC), 0, 10e6);
 		MatchingOrderBook.MarketDetails memory marketDetails = orderBook.getMarketDetails(marketId);
