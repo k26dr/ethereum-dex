@@ -75,6 +75,7 @@ contract MatchingOrderBookTest is Test {
 		assertEq(orders[0].baseQuantity, 115e6);
 		assertEq(orders[0].price, 1e6);
 		assertEq(orders[0].nextOrderId, 0);
+		assertEq(orders[0].previousOrderId, 0);
 	}
 
 	function testPlaceOneOrderBuy() public {
@@ -97,6 +98,7 @@ contract MatchingOrderBookTest is Test {
 		assertEq(orders[0].baseQuantity, 115e6);
 		assertEq(orders[0].price, 1e6);
 		assertEq(orders[0].nextOrderId, 0);
+		assertEq(orders[0].previousOrderId, 0);
 	}
 
 	function testPlaceTwoOrdersToCheckGas() public {
