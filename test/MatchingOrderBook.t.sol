@@ -9,6 +9,8 @@ contract MatchingOrderBookTest is Test {
 	MatchingOrderBook orderBook;
 	MockERC20 USDC;
 	MockERC20 EURT;
+	MockERC20 WETH;
+	MockERC20 WBTC;
 	address owner = address(0x1);
 	address user1 = address(0x2);
 	address user2 = address(0x3);
@@ -18,6 +20,8 @@ contract MatchingOrderBookTest is Test {
 	function setUp() public {
 		USDC = new MockERC20("USDC", "USDC", 6);
 		EURT = new MockERC20("EURT", "EURT", 6);
+		WETH = new MockERC20("WETH", "WETH", 18);
+		WBTC = new MockERC20("WBTC", "Wrapped Bitcoin", 8);
 		orderBook = new MatchingOrderBook();
 		USDC.mint(user1, 10000e6);
 		vm.prank(user1);
@@ -735,6 +739,134 @@ contract MatchingOrderBookTest is Test {
 		assertEq(orders[0].baseQuantity, 700e6);
 		assertEq(orders[0].price, 12e5);
 		assertEq(orders[0].nextOrderId, 0);
+	}
+
+	function testQuoteHasMoreDecimalsThanBase() public {
+		// zero all balances to start
+		uint user1weth = WETH.balanceOf(user1);
+		uint user1usdc = USDC.balanceOf(user1);
+		uint user2weth = WETH.balanceOf(user2);
+		uint user2usdc = USDC.balanceOf(user2);
+		if (user1weth != 0) {
+			vm.prank(user1);
+			WETH.transfer(burnAddress, user1weth);
+		}
+		if (user1usdc != 0) {
+			vm.prank(user1);
+			USDC.transfer(burnAddress, user1usdc);
+		}
+		if (user2weth != 0) {
+			vm.prank(user1);
+			WETH.transfer(burnAddress, user2weth);
+		}
+		if (user2usdc != 0) {
+			vm.prank(user1);
+			USDC.transfer(burnAddress, user2usdc);
+		}
+
+		orderBook.createMarket(address(WETH), address(USDC), 0, 10e6);
+		vm.prank(user1);
+		USDC.approve(address(orderBook), 100e18);
+		vm.prank(user2);
+		WETH.approve(address(orderBook), 100e18);
+		USDC.mint(user1, 3300e6);
+		WETH.mint(user2, 25e17);
+		bytes32 marketId = orderBook.getMarketId(address(WETH), address(USDC), 0, 10e6);
+		vm.prank(user1);
+		orderBook.placeOrder(marketId, MatchingOrderBook.Side.BUY, 1e18, 1000e6);
+		vm.prank(user1);
+		orderBook.placeOrder(marketId, MatchingOrderBook.Side.BUY, 1e18, 1100e6);
+		vm.prank(user1);
+		orderBook.placeOrder(marketId, MatchingOrderBook.Side.BUY, 1e18, 1200e6);
+		vm.prank(user2);
+		orderBook.placeOrder(marketId, MatchingOrderBook.Side.SELL, 25e17, 1000e6);
+
+		// verify post-trade balances
+		user1weth = WETH.balanceOf(user1);
+		user1usdc = USDC.balanceOf(user1);
+		user2weth = WETH.balanceOf(user2);
+		user2usdc = USDC.balanceOf(user2);
+		assertEq(user1weth, 25e17);
+		assertEq(user1usdc, 0, "user1 usdc balance is wrong");
+		assertEq(user2weth, 0, "user2 weth balance is wrong");
+		assertEq(user2usdc, 2800e6);
+		MatchingOrderBook.MarketDetails memory marketDetails = orderBook.getMarketDetails(marketId);
+		uint bankWethBalance = WETH.balanceOf(marketDetails.bankAddress);
+		uint bankUsdcBalance = USDC.balanceOf(marketDetails.bankAddress);
+		assertEq(bankWethBalance, 0);
+		assertEq(bankUsdcBalance, 500e6);
+		MatchingOrderBook.Order[] memory orders = orderBook.getOrderBook(marketId, MatchingOrderBook.Side.BUY, 2);
+		assertEq(orders[0].user, user1);
+		assertEq(orders[0].baseQuantity, 5e17);
+		assertEq(orders[0].price, 1000e6);
+		assertEq(orders[0].nextOrderId, 0);
+		assertEq(orders[0].previousOrderId, 0);
+		assertEq(orders[1].user, address(0));
+		assertEq(orders[1].baseQuantity, 0);
+	}
+
+	function testBaseHasMoreDecimalsThanQuote() public {
+		// zero all balances to start
+		uint user1wbtc = WBTC.balanceOf(user1);
+		uint user1weth = WETH.balanceOf(user1);
+		uint user2wbtc = WBTC.balanceOf(user2);
+		uint user2weth = WETH.balanceOf(user2);
+		if (user1wbtc != 0) {
+			vm.prank(user1);
+			WBTC.transfer(burnAddress, user1wbtc);
+		}
+		if (user1weth != 0) {
+			vm.prank(user1);
+			WETH.transfer(burnAddress, user1weth);
+		}
+		if (user2wbtc != 0) {
+			vm.prank(user1);
+			WBTC.transfer(burnAddress, user2wbtc);
+		}
+		if (user2weth != 0) {
+			vm.prank(user1);
+			WETH.transfer(burnAddress, user2weth);
+		}
+
+		orderBook.createMarket(address(WBTC), address(WETH), 1e3, 0);
+		vm.prank(user1);
+		WBTC.approve(address(orderBook), 25e7);
+		vm.prank(user2);
+		WETH.approve(address(orderBook), 48e18);
+		WBTC.mint(user1, 25e7);
+		WETH.mint(user2, 48e18);
+		bytes32 marketId = orderBook.getMarketId(address(WBTC), address(WETH), 1e3, 0);
+		vm.prank(user2);
+		orderBook.placeOrder(marketId, MatchingOrderBook.Side.BUY, 1e8, 15e18);
+		vm.prank(user2);
+		orderBook.placeOrder(marketId, MatchingOrderBook.Side.BUY, 1e8, 16e18);
+		vm.prank(user2);
+		orderBook.placeOrder(marketId, MatchingOrderBook.Side.BUY, 1e8, 17e18);
+		vm.prank(user1);
+		orderBook.placeOrder(marketId, MatchingOrderBook.Side.SELL, 25e7, 16e18);
+
+		// verify post-trade balances
+		user1weth = WETH.balanceOf(user1);
+		user1wbtc = WBTC.balanceOf(user1);
+		user2weth = WETH.balanceOf(user2);
+		user2wbtc = WBTC.balanceOf(user2);
+		assertEq(user1weth, 33e18);
+		assertEq(user1wbtc, 0, "user1 wbtc balance is wrong");
+		assertEq(user2weth, 0, "user2 weth balance is wrong");
+		assertEq(user2wbtc, 2e8);
+		MatchingOrderBook.MarketDetails memory marketDetails = orderBook.getMarketDetails(marketId);
+		uint bankWethBalance = WETH.balanceOf(marketDetails.bankAddress);
+		uint bankWbtcBalance = WBTC.balanceOf(marketDetails.bankAddress);
+		assertEq(bankWethBalance, 15e18, "bank weth balance is wrong");
+		assertEq(bankWbtcBalance, 5e7, "bank wbtc balance is wrong");
+		MatchingOrderBook.Order[] memory orders = orderBook.getOrderBook(marketId, MatchingOrderBook.Side.BUY, 2);
+		assertEq(orders[0].user, user2);
+		assertEq(orders[0].baseQuantity, 1e8);
+		assertEq(orders[0].price, 15e18);
+		assertEq(orders[0].nextOrderId, 0);
+		assertEq(orders[0].previousOrderId, 0);
+		assertEq(orders[1].user, address(0));
+		assertEq(orders[1].baseQuantity, 0);
 	}
 
 }
