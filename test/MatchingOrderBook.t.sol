@@ -11,6 +11,7 @@ contract MatchingOrderBookTest is Test {
 	MockERC20 EURT;
 	MockERC20 WETH;
 	MockERC20 WBTC;
+	MockERC20 AAPL;
 	address owner = address(0x1);
 	address user1 = address(0x2);
 	address user2 = address(0x3);
@@ -22,6 +23,7 @@ contract MatchingOrderBookTest is Test {
 		EURT = new MockERC20("EURT", "EURT", 6);
 		WETH = new MockERC20("WETH", "WETH", 18);
 		WBTC = new MockERC20("WBTC", "Wrapped Bitcoin", 8);
+		AAPL = new MockERC20("AAPL", "Apple", 0);
 		orderBook = new MatchingOrderBook();
 		USDC.mint(user1, 10000e6);
 		vm.prank(user1);
@@ -171,30 +173,6 @@ contract MatchingOrderBookTest is Test {
 		assertEq(orders[99].previousOrderId, 2, "previousOrderId pointer is wrong");
 		assertEq(orders[99].nextOrderId, 0, "nextOrderId pointer is wrong");
 	}
-
-	//function testPlace999SellOrders() public {
-	//	orderBook.createMarket(address(EURT), address(USDC), 0, 10e6);
-	//	vm.prank(user1);
-	//	EURT.approve(address(orderBook), 100e18);
-	//	EURT.mint(user1, 1000*1e18);
-	//	bytes32 marketId = orderBook.getMarketId(address(EURT), address(USDC), 0, 10e6);
-	//	for (uint i=1; i < 1000; i++) {
-	//		vm.prank(user1);
-	//		orderBook.placeOrder(marketId, MatchingOrderBook.Side.SELL, 115e6, i * 1e6);
-	//	}
-	//}
-
-	//function testPlace1000SellOrders() public {
-	//	orderBook.createMarket(address(EURT), address(USDC), 0, 10e6);
-	//	vm.prank(user1);
-	//	EURT.approve(address(orderBook), 100e18);
-	//	EURT.mint(user1, 1000*1e18);
-	//	bytes32 marketId = orderBook.getMarketId(address(EURT), address(USDC), 0, 10e6);
-	//	for (uint i=1; i < 1001; i++) {
-	//		vm.prank(user1);
-	//		orderBook.placeOrder(marketId, MatchingOrderBook.Side.SELL, 115e6, i * 1e6);
-	//	}
-	//}
 
 	function testFillOneOrder() public {
 		// zero all balances to start
@@ -867,6 +845,52 @@ contract MatchingOrderBookTest is Test {
 		assertEq(orders[0].previousOrderId, 0);
 		assertEq(orders[1].user, address(0));
 		assertEq(orders[1].baseQuantity, 0);
+	}
+
+	function testUnsplittableShares() public {
+		orderBook.createMarket(address(AAPL), address(USDC), 0, 0);
+		bytes32 marketId = orderBook.getMarketId(address(AAPL), address(USDC), 0, 0);
+		AAPL.mint(user1, 1);
+		USDC.mint(user2, 100e6);
+		vm.prank(user1);
+		AAPL.approve(address(orderBook), 1);
+		vm.prank(user2);
+		USDC.approve(address(orderBook), 100e6);
+		vm.prank(user1);
+		orderBook.placeOrder(marketId, MatchingOrderBook.Side.SELL, 1, 100e6);
+		vm.prank(user2);
+		orderBook.placeOrder(marketId, MatchingOrderBook.Side.BUY, 1, 100e6);
+		MatchingOrderBook.Order[] memory orders = orderBook.getOrderBook(marketId, MatchingOrderBook.Side.BUY, 1);
+		assertEq(orders[0].user, address(0));
+		assertEq(orders[0].baseQuantity, 0);
+		assertEq(orders[0].price, 0);
+		assertEq(orders[0].nextOrderId, 0);
+		assertEq(orders[0].previousOrderId, 0);
+	}
+
+	function test1000WethUsdcOrders() public {
+		orderBook.createMarket(address(WETH), address(USDC), 0, 0);
+		bytes32 marketId = orderBook.getMarketId(address(WETH), address(USDC), 0, 0);
+		WETH.mint(user1, 1e30);
+		USDC.mint(user1, 1e30);
+		WETH.mint(user2, 1e30);
+		USDC.mint(user2, 1e30);
+		vm.prank(user1);
+		WETH.approve(address(orderBook), 1e30);
+		vm.prank(user1);
+		USDC.approve(address(orderBook), 1e30);
+		vm.prank(user2);
+		WETH.approve(address(orderBook), 1e30);
+		vm.prank(user2);
+		USDC.approve(address(orderBook), 1e30);
+		for (uint i=0; i<1000; i++) {
+			address user = vm.randomUint() % 2 == 0 ? user1 : user2;
+			MatchingOrderBook.Side side = vm.randomUint() % 2 == 0 ? MatchingOrderBook.Side.BUY : MatchingOrderBook.Side.SELL;
+			uint baseQuantity = vm.randomUint() % 1e20;
+			uint price = vm.randomUint() % 100e6 + 1000e6;
+			vm.prank(user);
+			orderBook.placeOrder(marketId, side, baseQuantity, price);
+		}
 	}
 
 }
