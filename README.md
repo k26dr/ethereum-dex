@@ -4,9 +4,15 @@ There are 2 versions of EVM orderbooks in this repo. Both charge 0 trading fees 
 
 One is a scalable system for high-fee chains like Ethereum that allows for decentralized operation via an indexer that can be run locally or remotely: [Orderbook.sol](OrderBook.sol). There are no order minimums and the design optimizes gas to keep execution prices low.
 
-The other uses an on-chain matching engine that consumes more gas but permits full on-chain matching. It's ideal for low-fee chains but in the current environment with low Ethereum fees it could be viable there as well: [MatchingOrderbook.sol](MatchingOrderBook.sol). There is a minimum post order size on markets in this version that's configurable during market creation. Any orders below the minimum size are run as fill or kill operations that error out if the order doesn't fill in it's entirety. A single base-quote token pair can have multiple markets with different order minimum sizes. This keeps the exchange flexible and allows us to get to a level where spam is no longer an issue. 
+The other uses an on-chain matching engine that consumes more gas but permits full on-chain matching. It's ideal for low-fee chains but in the current environment with low Ethereum fees it could be viable there as well: [MatchingOrderbook.sol](MatchingOrderBook.sol). 
+
+There is a minimum post order size on markets in this version that's configurable during market creation. Any orders below the minimum size are run as fill or kill operations that error out if the order doesn't fill in it's entirety. A single base-quote token pair can have multiple markets with different order minimum sizes. This keeps the exchange flexible and allows us to get to a level where spam is no longer an issue. 
 
 Both versions have a risk isolation system to prevent malicious tokens from attacking other markets, and have support for both regular ERC20 and non-standard fee-for-transfer tokens.  Rebasing tokens are not supported and there is currently no plan to do so. 
+
+The Solidity code for both versions is complete. Frontends for both are still under development. Additionally an indexer for the non-matching version is also under development. 
+
+The contract for the matching version is live and deployed on Base mainnet. Contract addresses will be added soon when mainnet testing is complete. 
 
 # CLI For the non-matching orderbook
 
