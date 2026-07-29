@@ -246,6 +246,9 @@ contract MatchingOrderBook {
 		if (order.previousOrderId != 0) {
 			orders[marketId][side][order.previousOrderId].nextOrderId = order.nextOrderId;
 		}
+		else { // update the orderbook HEAD if the first order gets deleted
+			orderbooks[marketId][side] = order.nextOrderId;
+		}
 
 		// Re-entrancy here is limited to malicious tokens
 		if (side == Side.SELL) {
