@@ -60,7 +60,7 @@ contract MatchingOrderBook {
 	mapping(bytes32 => mapping(Side => mapping(uint128 => Order))) orders; // marketId -> Side -> orderId -> Order
 	uint128 public orderCounter = 0; // order counter increments before being saved so the first order ID saved will be 1
 
-	event OrderPlaced(uint indexed orderId, address indexed user, address baseToken, address quoteToken, bytes32 indexed markethash, Side side, uint baseQuantity, uint price);
+	event OrderPlaced(uint indexed orderId, address indexed user, bytes32 indexed markethash, Side side, uint baseQuantity, uint price);
 	event OrderCanceled(uint indexed orderId);
 	event OrderFill(uint indexed orderId, uint baseQuantity);
 	event MarketCreated(bytes32 marketId, address indexed baseToken, address indexed quoteToken, uint baseMinimum, uint quoteMinimum, address bankAddress);
@@ -235,8 +235,7 @@ contract MatchingOrderBook {
 			}
 		}
 
-		bytes32 markethash = keccak256(abi.encodePacked(marketDetails.baseToken, marketDetails.quoteToken));
-		emit OrderPlaced(orderId, msg.sender, marketDetails.baseToken, marketDetails.quoteToken, markethash, side, baseQuantity, price);
+		emit OrderPlaced(orderId, msg.sender, marketId, side, baseQuantity, price);
 	}
 
 	function cancelOrder(bytes32 marketId, Side side, uint128 orderId) external {
