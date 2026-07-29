@@ -28,9 +28,6 @@ contract Bank {
 	}
 }
 
-error Uint2Error(uint m, uint n);
-error AddressError(address m);
-
 contract MatchingOrderBook {
 	enum Side {
 		BUY,
