@@ -43,6 +43,7 @@ contract MatchingOrderBook {
 	struct MarketDetails {
 		address baseToken;
 		address quoteToken;
+		uint8 baseTokenDecimals;
 		uint baseMinPostSize;
 		uint quoteMinPostSize;
 		address payable bankAddress;
@@ -67,8 +68,13 @@ contract MatchingOrderBook {
 	function createMarket(address baseToken, address quoteToken, uint baseMinimum, uint quoteMinimum) external {
 		bytes32 marketId = getMarketId(baseToken, quoteToken, baseMinimum, quoteMinimum);
 		require(MARKET_DETAILS[marketId].bankAddress == address(0), "market has already been created");
+
+		// get base token decimals
+		(bool baseDecimalCallSuccess, uint8 baseTokenDecimals) = IERC20(baseToken).tryGetDecimals();
+		require(baseDecimalCallSuccess, "failed to get decimals for base token");
+
 		address payable bankAddress = payable(address(new Bank(address(this))));
-		MARKET_DETAILS[marketId] = MarketDetails(baseToken, quoteToken, baseMinimum, quoteMinimum, bankAddress);
+		MARKET_DETAILS[marketId] = MarketDetails(baseToken, quoteToken, baseTokenDecimals, baseMinimum, quoteMinimum, bankAddress);
 		emit MarketCreated(marketId, baseToken, quoteToken, baseMinimum, quoteMinimum, bankAddress);
 	}
 
@@ -78,9 +84,7 @@ contract MatchingOrderBook {
 		require(marketDetails.bankAddress != address(0), "createMarket before placing an order on it");
 		require(baseQuantity > 0 && price > 0, "zero quantity/price orders not permitted");
 
-		(bool decimalCallSuccess, uint8 baseTokenDecimals) = IERC20(marketDetails.baseToken).tryGetDecimals();
-		require(decimalCallSuccess, "failed to get decimals for token");
-		placeOrderVars.quoteQuantity = baseQuantity * price / 10**baseTokenDecimals;
+		placeOrderVars.quoteQuantity = baseQuantity * price / 10**marketDetails.baseTokenDecimals;
 		require(placeOrderVars.quoteQuantity > 0, "calculated quote quantity is zero");
 
 		// This is to transfer tokens into the contract
@@ -95,7 +99,7 @@ contract MatchingOrderBook {
 			uint transferredBaseQuantity = afterBalance - beforeBalance;
 			if (transferredBaseQuantity != baseQuantity) {
 				baseQuantity = transferredBaseQuantity;
-				placeOrderVars.quoteQuantity = baseQuantity * price / 10**baseTokenDecimals;
+				placeOrderVars.quoteQuantity = baseQuantity * price / 10**marketDetails.baseTokenDecimals;
 				require(placeOrderVars.quoteQuantity > 0, "calculated quote quantity is zero");
 			}
 		} else if (side == Side.BUY) {
@@ -107,7 +111,7 @@ contract MatchingOrderBook {
 			if (transferredQuoteQuantity != placeOrderVars.quoteQuantity) {
 				require(transferredQuoteQuantity > 0, "transferred quote quantity is zero");
 				placeOrderVars.quoteQuantity = transferredQuoteQuantity;
-				price = baseQuantity * 10**baseTokenDecimals / transferredQuoteQuantity;
+				price = baseQuantity * 10**marketDetails.baseTokenDecimals / transferredQuoteQuantity;
 			}
 		}
 
@@ -130,7 +134,7 @@ contract MatchingOrderBook {
 
 				placeOrderVars.fillOccurred = true;
 				uint fillBaseQuantity = (baseQuantity > fillOrder.baseQuantity) ? fillOrder.baseQuantity : baseQuantity;
-				uint fillQuoteQuantity = fillBaseQuantity * fillOrder.price / 10**baseTokenDecimals;
+				uint fillQuoteQuantity = fillBaseQuantity * fillOrder.price / 10**marketDetails.baseTokenDecimals;
 				placeOrderVars.usedQuoteQuantity += fillQuoteQuantity;
 				emit OrderFill(placeOrderVars.fillOrderId, fillBaseQuantity);
 
@@ -172,7 +176,7 @@ contract MatchingOrderBook {
 
 		// Block scope this to avoid too many local variables
 		{
-			uint postQuoteQuantity = baseQuantity * price / 10**baseTokenDecimals;
+			uint postQuoteQuantity = baseQuantity * price / 10**marketDetails.baseTokenDecimals;
 			bool canPost = baseQuantity >= marketDetails.baseMinPostSize && postQuoteQuantity >= marketDetails.quoteMinPostSize;
 			require(placeOrderVars.fillOccurred || canPost, "order was too small to post. ran as fill or kill and failed to fill.");
 
@@ -254,9 +258,7 @@ contract MatchingOrderBook {
 		if (side == Side.SELL) {
 			Bank(marketDetails.bankAddress).withdrawTo(order.user, marketDetails.baseToken, order.baseQuantity);
 		} else if (side == Side.BUY) {
-			(bool decimalCallSuccess, uint8 baseTokenDecimals) = IERC20(marketDetails.baseToken).tryGetDecimals();
-			require(decimalCallSuccess, "failed to get decimals for token");
-			uint quoteQuantity = order.baseQuantity * order.price / 10**baseTokenDecimals;
+			uint quoteQuantity = order.baseQuantity * order.price / 10**marketDetails.baseTokenDecimals;
 			Bank(marketDetails.bankAddress).withdrawTo(order.user, marketDetails.quoteToken, quoteQuantity);
 		}
 		emit OrderCanceled(orderId);
