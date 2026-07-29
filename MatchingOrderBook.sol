@@ -184,7 +184,7 @@ contract MatchingOrderBook {
 				if (side == Side.SELL) {
 					Bank(marketDetails.bankAddress).withdrawTo(msg.sender, marketDetails.baseToken, baseQuantity);
 				} else {
-					// remainingQuoteQuantity and postQuoteQuantity can diverge significantly for orders that fill off the submitted price
+					// remainingQuoteQuantity and postQuoteQuantity can diverge significantly for orders that fill off the submitted taker price
 					uint remainingQuoteQuantity = placeOrderVars.quoteQuantity - placeOrderVars.usedQuoteQuantity;
 					Bank(marketDetails.bankAddress).withdrawTo(msg.sender, marketDetails.quoteToken, remainingQuoteQuantity);
 				}
