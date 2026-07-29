@@ -195,9 +195,7 @@ contract MatchingOrderBook {
 		}
 
 		// Increment order counter
-		unchecked {
-			orderId = ++orderCounter;
-		}
+		orderId = ++orderCounter;
 
 		// Place leftover orders in book then refund leftover funds
 		// Block scope this to avoid too many local variables
