@@ -898,4 +898,20 @@ contract MatchingOrderBookTest is Test {
 		}
 	}
 
+	function deleteFirstOrderUpdateHead() public {
+		orderBook.createMarket(address(WETH), address(USDC), 0, 0);
+		bytes32 marketId = orderBook.getMarketId(address(WETH), address(USDC), 0, 0);
+		WETH.mint(user1, 1e30);
+		vm.prank(user1);
+		uint128 firstOrderId = orderBook.placeOrder(marketId, MatchingOrderBook.Side.SELL, 1, 1001e6);
+		vm.prank(user1);
+		uint128 secondOrderId = orderBook.placeOrder(marketId, MatchingOrderBook.Side.SELL, 1, 1000e6);
+		uint128 orderbookHead = orderBook.getFirstOrderId(marketId, MatchingOrderBook.Side.SELL);
+		require(orderbookHead == firstOrderId);
+		vm.prank(user1);
+		orderBook.cancelOrder(marketId, MatchingOrderBook.Side.SELL, firstOrderId);
+		orderbookHead = orderBook.getFirstOrderId(marketId, MatchingOrderBook.Side.SELL);
+		require(orderbookHead == secondOrderId, "order cancellation did not update head properly");
+	}
+
 }

@@ -273,7 +273,7 @@ contract MatchingOrderBook {
 		return orders[marketId][side][orderId];
 	}
 
-	function getFirstOrderId(bytes32 marketId, Side side) external view returns (uint) {
+	function getFirstOrderId(bytes32 marketId, Side side) external view returns (uint128) {
 		return orderbooks[marketId][side];
 	}
 
