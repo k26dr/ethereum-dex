@@ -184,7 +184,9 @@ contract MatchingOrderBook {
 				if (side == Side.SELL) {
 					Bank(marketDetails.bankAddress).withdrawTo(msg.sender, marketDetails.baseToken, baseQuantity);
 				} else {
-					Bank(marketDetails.bankAddress).withdrawTo(msg.sender, marketDetails.quoteToken, postQuoteQuantity);
+					// remainingQuoteQuantity and postQuoteQuantity can diverge significantly for orders that fill off the submitted price
+					uint remainingQuoteQuantity = placeOrderVars.quoteQuantity - placeOrderVars.usedQuoteQuantity;
+					Bank(marketDetails.bankAddress).withdrawTo(msg.sender, marketDetails.quoteToken, remainingQuoteQuantity);
 				}
 				return 0;
 			}
@@ -280,6 +282,8 @@ contract MatchingOrderBook {
 		Order[] memory returnOrders = new Order[](depth); 
 		uint128 orderId = orderbooks[marketId][side];
 		for (uint i=0; i < depth; i++) {
+			// If the orderbook depth is less than the requested depth, just cut the loop early to save CPU cycles
+			if (orders[marketId][side][orderId].baseQuantity == 0) return returnOrders;
 			returnOrders[i] = orders[marketId][side][orderId];
 			orderId = orders[marketId][side][orderId].nextOrderId;
 		}
