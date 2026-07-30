@@ -1,49 +1,22 @@
+<h1>Jumper Exchange</h1>
+
+<p>Orderbook on Base</p>
+
 <script>
 
-// Update char count while typing
-document.getElementById('upload-text').addEventListener('input', async function (e) {
-  const charCount = document.getElementById('upload-text').value.length
-  document.getElementById('char-count').innerHTML = charCount
+const accounts = await window.ethereum.request({
+	method: "eth_requestAccounts"
+})
+const txHash = await window.ethereum.request({
+	method: "eth_sendTransaction",
+	params: [{
+		from: accounts[0],
+		to: "0xfd6d80e677bf8e22f2a09c56f29594d216f23279",
+		value: '0',
+		data: '0x' + utf8text
+	}]
 })
 
-document.getElementById('submit-text').addEventListener('click', async function (e) {
-  const charCount = document.getElementById('upload-text').value.length
-  const text = document.getElementById('upload-text').value
-  const textEncoder = new TextEncoder();
-  const utf8text = Array.from(textEncoder.encode(text))
-    .map(c => c.toString(16).padStart(2, "0"))
-    .join("")
 
-  const accounts = await window.ethereum.request({
-    method: "eth_requestAccounts"
-  })
-  const txHash = await window.ethereum.request({
-    method: "eth_sendTransaction",
-    params: [
-      {
-        from: accounts[0],
-        to: "0xfd6d80e677bf8e22f2a09c56f29594d216f23279",
-        value: '0',
-        data: '0x' + utf8text
-      },
-    ],
-  })
-})
-
-document.getElementById('submit-render-text').addEventListener('click', async function (e) {
-	const txid = document.getElementById('render-html-txid').value.trim()
-	const txinfo = await window.ethereum.request({
-		method: "eth_getTransactionByHash",
-		params: [txid]
-	})
-	document.getElementById('textview').innerText = hexToUtf8(txinfo.input.slice(2)).replace(/\t/g, '\u00a0\u00a0\u00a0\u00a0\u00a0\u00a0\u00a0\u00a0')
-})
-
-function hexToUtf8(s) {
-  return decodeURIComponent(
-     s.replace(/\s+/g, '') // remove spaces
-      .replace(/[0-9a-f]{2}/g, '%$&') // add '%' before each 2 characters
-  );
-}
 </script>
 
