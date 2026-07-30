@@ -4,18 +4,25 @@
 
 <script>
 
+// contract addresses by chain id
+const CONTRACT_ADDRESSES = {
+	'0x14a34': '0x672F3b4A034d60Cb449F0B7aC8f64564E701552C', // Base Sepolia testnet
+}
 const accounts = await window.ethereum.request({
 	method: "eth_requestAccounts"
 })
-const txHash = await window.ethereum.request({
-	method: "eth_sendTransaction",
-	params: [{
-		from: accounts[0],
-		to: "0xfd6d80e677bf8e22f2a09c56f29594d216f23279",
-		value: '0',
-		data: '0x' + utf8text
-	}]
+const chainId = await window.ethereum.request({
+	method: "eth_chainId"
 })
+//const txHash = await window.ethereum.request({
+//	method: "eth_sendTransaction",
+//	params: [{
+//		from: accounts[0],
+//		to: "0xfd6d80e677bf8e22f2a09c56f29594d216f23279",
+//		value: '0',
+//		data: '0x' + utf8text
+//	}]
+//})
 
 
 </script>
