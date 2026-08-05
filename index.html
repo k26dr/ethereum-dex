@@ -8,8 +8,11 @@
 <input type="number"><button>Approve USDT</button><br><br>
 <details>
 	<summary>Advanced</summary>
-	<p>WARNING: Manually setting an invalid contract address will lead to loss of funds!</p>
-	<input type="text"><button>Set Contract Address</button>
+	<p>WARNING: Manually setting an invalid contract address will lead to loss of funds! Click Enable to enable that field.</p>
+	<!-- Default is Base Sepolia contract address -->
+	<input type="text" id="contract-address-input" value="0x672F3b4A034d60Cb449F0B7aC8f64564E701552C" disabled>
+	<button id="enable-contract-address">Enable</button>
+	<button>Set Contract Address</button>
 </details>
 
 <br>
@@ -28,6 +31,10 @@
 
 <script>
 
+document.getElementById('enable-contract-address').addEventListener('click', function () {
+	document.getElementById('contract-address-input').disabled = false
+})
+
 // contract addresses by chain id
 const CONTRACT_ADDRESSES = {
 	'0x14a34': '0x672F3b4A034d60Cb449F0B7aC8f64564E701552C', // Base Sepolia testnet
@@ -38,12 +45,12 @@ const WETH_ADDRESSES = {
 const BASE_TOKEN = '';
 const QUOTE_TOKEN = '';
 
-const accounts = await window.ethereum.request({
-	method: "eth_requestAccounts"
-})
-const chainId = await window.ethereum.request({
-	method: "eth_chainId"
-})
+//const accounts = await window.ethereum.request({
+//	method: "eth_requestAccounts"
+//})
+//const chainId = await window.ethereum.request({
+//	method: "eth_chainId"
+//})
 //const txHash = await window.ethereum.request({
 //	method: "eth_sendTransaction",
 //	params: [{
